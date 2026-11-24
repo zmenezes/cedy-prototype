@@ -25,6 +25,13 @@
     if (!s) return 0;
     return C.round2((indic + gest) * (s.splitPct || 0) / 100);
   }
+  /** estimativa do mês corrente (ainda sem apuração) para um conjunto de indicados: total e parte dos subs */
+  function estMes(orgs) {
+    const comp = compOf(now()); let tot = 0, sub = 0;
+    orgs.forEach((o) => { const e = premEstimate(o.id, comp); tot += e.indic + e.gest; sub += estSplitOf(o, e.indic, e.gest); });
+    return { tot: C.round2(tot), sub: C.round2(sub) };
+  }
+  C.premiacaoEstMes = estMes;
   const liquidoOf = (p) => C.round2((p.parteOrig !== undefined && p.parteOrig !== null ? p.parteOrig : p.total));
   function falarComOriginador() {
     notify.send({ to: { orgId: ORG }, tipo: 'info', titulo: 'Subparceiro quer falar com você', corpo: `${session.user().nome} pediu contato sobre a comissão.`, link: '/originador/subparceiros' });
@@ -219,7 +226,7 @@
       const rows = subs.map((s) => {
         const orgs = db.where('orgs', (o) => o.indicadoPor === ORG && o.subparceiroId === s.id);
         const v30 = C.round2(C.sum(orgs, (o) => vol30(o.id)));
-        const parteMes = C.round2(C.sum(myPremiacoes().filter((p) => p.competencia === comp && p.subId === s.id), (p) => p.parteSub || 0));
+        const parteMes = estMes(orgs).sub;
         const pend = myPremiacoes().filter((p) => p.subId === s.id && repasseOf(p) === 'pendente').length;
         const d = s.ultimaAtividade ? daysAgo(s.ultimaAtividade) : null;
         return { s, orgs: orgs.length, v30, parteMes, pend, d };
@@ -248,7 +255,7 @@
     const orgs = db.where('orgs', (o) => o.indicadoPor === ORG && o.subparceiroId === sid);
     const convs = db.where('convites', (c) => c.origId === ORG && c.subId === sid && !c.orgId);
     const prem = myPremiacoes().filter((p) => p.subId === sid);
-    const parteMes = C.round2(C.sum(prem.filter((p) => p.competencia === comp), (p) => p.parteSub || 0));
+    const parteMes = estMes(orgs).sub;
     const comissaoTotal = C.round2(C.sum(prem, (p) => p.parteSub || 0));
     const pend = prem.filter((p) => repasseOf(p) === 'pendente');
     const vol = C.round2(C.sum(orgs, (o) => vol30(o.id)));
@@ -257,7 +264,7 @@
       h('div.grid.g4.keep2',
         ui.kpi({ label: 'Meus indicados', value: orgs.length, icon: 'users', tone: 'green', onclick: () => ctx.go('/originador/indicados') }),
         ui.kpi({ label: 'Volume 30 dias', value: Math.round(vol), fmt: 'brl', icon: 'trending-up', hint: 'Face das operações pagas' }),
-        ui.kpi({ label: 'Comissão do mês', value: Math.round(parteMes), fmt: 'brl', icon: 'hand-coins', tone: 'amber', hint: `${fmt.monthLong(comp)} · split ${s.splitPct}%`, onclick: () => ctx.go('/originador/premiacao') }),
+        ui.kpi({ label: 'Comissão estimada do mês', value: Math.round(parteMes), fmt: 'brl', icon: 'hand-coins', tone: 'amber', hint: `${fmt.monthLong(comp)} · split ${s.splitPct}% · até a apuração`, onclick: () => ctx.go('/originador/premiacao') }),
         ui.kpi({ label: 'Repasses pendentes', value: pend.length, icon: 'flag', tone: pend.length ? 'amber' : 'green', hint: pend.length ? 'Aguardando repasse da Lumen' : 'Tudo repassado', onclick: () => ctx.go('/originador/premiacao') })),
       ui.card({ title: 'Meus indicados', subtitle: 'Status e volume. Sem dados financeiros ou bancários dos indicados.', actions: [ui.btn('Ver todos', { variant: 'ghost', size: 'sm', onclick: () => ctx.go('/originador/indicados') })] },
         orgs.length ? h('div.list', orgs.slice(0, 5).map((o) => {
@@ -705,7 +712,7 @@
     if (!s) { ui.toast('Acesso restrito', { type: 'warn', text: 'Sua conta não está ligada a nenhum subparceiro.' }); ctx.go('/originador'); return h('div'); }
     const prem = myPremiacoes().filter((p) => p.subId === sid).sort((a, b) => a.competencia < b.competencia ? 1 : -1);
     const comp = compOf(now());
-    const parteMes = C.round2(C.sum(prem.filter((p) => p.competencia === comp), (p) => p.parteSub || 0));
+    const parteMes = estMes(db.where('orgs', (o) => o.indicadoPor === ORG && o.subparceiroId === sid)).sub;
     const total = C.round2(C.sum(prem, (p) => p.parteSub || 0));
     const pend = prem.filter((p) => repasseOf(p) === 'pendente');
     const pendTot = C.round2(C.sum(pend, (p) => p.parteSub || 0));
@@ -714,7 +721,7 @@
     return h('div.stack',
       ui.pageHeader({ eyebrow: 'Subparceiro · ' + s.nome, title: 'Minha comissão', subtitle: `${s.splitPct}% da premiação dos seus indicados, congelada por competência. O repasse é marcado pela Lumen após o pagamento da Cedy no dia 20.`, actions: [ui.btn('Falar com meu originador', { variant: 'secondary', icon: 'send', onclick: falarComOriginador })] }),
       h('div.grid.g4.keep2',
-        ui.kpi({ label: 'Comissão do mês', value: Math.round(parteMes), fmt: 'brl', icon: 'hand-coins', tone: 'amber', hint: `${fmt.monthLong(comp)} · split ${s.splitPct}%` }),
+        ui.kpi({ label: 'Comissão estimada do mês', value: Math.round(parteMes), fmt: 'brl', icon: 'hand-coins', tone: 'amber', hint: `${fmt.monthLong(comp)} · split ${s.splitPct}% · até a apuração` }),
         ui.kpi({ label: 'Comissão acumulada', value: Math.round(total), fmt: 'brl', icon: 'award', hint: `${fmt.plural(prem.length, 'competência', 'competências')} apuradas` }),
         ui.kpi({ label: 'Aguardando repasse', value: Math.round(pendTot), fmt: 'brl', icon: 'flag', tone: pend.length ? 'amber' : 'green', hint: pend.length ? `${fmt.plural(pend.length, 'competência pendente', 'competências pendentes')}` : 'Tudo repassado' }),
         ui.kpi({ label: 'Próximo pagamento Cedy', value: 'dia 20', icon: 'calendar-days', hint: fmt.date(prox20) })),

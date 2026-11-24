@@ -23,6 +23,8 @@
     originador: ['Minha premiação do mês', 'Quais indicados estão inativos?', 'Como funciona a janela de 24 meses?', 'O que mudou hoje?'],
     sacado: ['O que pago esta semana?', 'Títulos aguardando minha confirmação', 'Para quem e onde pago?', 'O que mudou hoje?'],
     ops: ['Filas e SLAs', 'Casos críticos', 'Propostas de agentes aguardando', 'Verificar integridade da trilha', 'O que mudou hoje?', 'Que horas são na simulação?'],
+    subparceiro: ['Minha comissão do mês', 'Quanto falta o originador me repassar?', 'Quais indicados estão parados?', 'Como funciona o meu split?', 'O que mudou hoje?'],
+    superadmin: ['Aprovações pendentes', 'Incidentes e serviços com problema', 'Custo de IA no mês', 'Estado do mercado', 'Último backup e RPO', 'Pedidos LGPD abertos', 'Segurança e acessos', 'Verificar integridade da trilha'],
   };
 
   /* ------------------------------- estado -------------------------------- */
@@ -63,11 +65,11 @@
   /* ------------------------------ respostas ------------------------------ */
   function answer(q) {
     const me = session.get(); const role = session.role(); const org = session.org();
-    const ctx = { me, role, org, user: session.user() };
+    const ctx = { me, role, org, user: session.user(), key: C.shellKey() };
     const r = route(q, ctx);
     if (r) { bubble('b', r.nodes, r.acts); return; }
     bubble('b', ['Não entendi. Tente uma destas perguntas:'],
-      CHIPS[role].slice(0, 4).map((c) => ({ label: c, run: () => send(c) })));
+      CHIPS[ctx.key].slice(0, 4).map((c) => ({ label: c, run: () => send(c) })));
   }
   function kvActs(pairs, acts) { return { nodes: [ui.kv(pairs)], acts }; }
   function say(text, acts) { return { nodes: [text], acts }; }
@@ -85,11 +87,13 @@
     if (/recurso livre/.test(n)) return intentGloss(n);
     if (/firmeza|firme/.test(n)) return intentGloss(n);
     if (/\blar\b|limite de antecip/.test(n)) return intentGloss(n);
-    if (ctx.role === 'cedente') { const r = cedenteRoute(n, ctx); if (r) return r; }
-    if (ctx.role === 'financiador') { const r = finRoute(n, ctx); if (r) return r; }
-    if (ctx.role === 'originador') { const r = origRoute(n, ctx); if (r) return r; }
-    if (ctx.role === 'sacado') { const r = sacRoute(n, ctx); if (r) return r; }
-    if (ctx.role === 'ops') { const r = opsRoute(n, ctx); if (r) return r; }
+    if (ctx.key === 'cedente') { const r = cedenteRoute(n, ctx); if (r) return r; }
+    if (ctx.key === 'financiador') { const r = finRoute(n, ctx); if (r) return r; }
+    if (ctx.key === 'originador') { const r = origRoute(n, ctx); if (r) return r; }
+    if (ctx.key === 'subparceiro') { const r = subRoute(n, ctx); if (r) return r; }
+    if (ctx.key === 'sacado') { const r = sacRoute(n, ctx); if (r) return r; }
+    if (ctx.key === 'superadmin') { const r = superRoute(n, ctx); if (r) return r; }
+    if (ctx.key === 'ops' || ctx.key === 'superadmin') { const r = opsRoute(n, ctx); if (r) return r; }
     if (/ajuda|o que voce|como funciona|comecar|o que sabe/.test(n)) return intentAjuda(ctx);
     return null;
   }
@@ -101,6 +105,12 @@
   }
   /** a trilha é de todos; cada perfil só vê o que é da sua empresa (e lances só o próprio financiador, que são anônimos para os demais) */
   function eventoVisivel(e, ctx) {
+    if (ctx.key === 'subparceiro') {
+      const ent0 = e.entidade || {};
+      if (ent0.kind !== 'premiacao') return false;
+      const p0 = db.get('premiacoes', ent0.id);
+      return !!p0 && p0.subId === ctx.user.subId;
+    }
     if (ctx.role === 'ops') return true;
     const orgId = ctx.org.id; const ent = e.entidade || {}; const u = e.actor ? db.get('users', e.actor.id) : null;
     if (/^lance\./.test(e.acao)) return ctx.role === 'financiador' && !!u && u.orgId === orgId;
@@ -126,7 +136,7 @@
     return { nodes: [items.length ? `Desde 0h da simulação: ${nEv} na trilha${ctx.role === 'ops' ? '' : ' da sua conta'}.` : 'Nada novo na trilha desde 0h da simulação.',
       items.length ? h('ul', { style: 'margin:6px 0 0 16px;list-style:disc' }, items.slice(0, 6).map((t) => h('li.small', t))) : null,
       mine.length ? `Você tem ${fmt.plural(mine.length, 'notificação não lida', 'notificações não lidas')}.` : null].filter(Boolean),
-      acts: mine.length ? [{ label: 'Ver notificações', primary: true, route: '/' + ctx.role + '/notificacoes' }] : [{ label: 'Ir para o início', route: C.roles[ctx.role].home }] };
+      acts: mine.length ? [{ label: 'Ver notificações', primary: true, route: '/' + ctx.role + '/notificacoes' }] : [{ label: 'Ir para o início', route: C.homeFor(ctx.me) }] };
   }
   function notifyMine(ctx) { try { return C.store.notify.mine().filter((x) => !x.lida); } catch (e) { return []; } }
   const GLOSS = [
@@ -148,7 +158,7 @@
   }
   function intentAjuda(ctx) {
     return { nodes: [`Sou o assistente da Cedy, ${ctx.user.nome.split(' ')[0]}. Respondo com números reais da sua conta (${orgName(ctx.org.id)}, perfil ${ctx.user.perfil}). Escolha um atalho:`],
-      acts: CHIPS[ctx.role].map((c) => ({ label: c.length > 34 ? c.slice(0, 34) + '…' : c, run: () => send(c) })) };
+      acts: CHIPS[ctx.key].map((c) => ({ label: c.length > 34 ? c.slice(0, 34) + '…' : c, run: () => send(c) })) };
   }
   /* --------------------------------- cedente ------------------------------- */
   function cedenteRoute(n, ctx) {
@@ -266,7 +276,8 @@
   function intentOp(opm, ctx) {
     const num = opm[1].padStart(4, '0');
     const op = db.get('operacoes', 'OP-26-' + num) || db.all('operacoes').find((o) => norm(o.id).includes(num));
-    if (!op) return say(`Não encontrei operação com final ${num}. Confira o número na lista de operações.`, [{ label: 'Ver operações', route: C.roles[ctx.role].home }]);
+    if (op && ctx.key === 'subparceiro') return say('Subparceiros acompanham status e volume dos indicados, não o detalhe das operações.', [{ label: 'Ver meus indicados', route: '/originador/indicados' }]);
+    if (!op || !opVisivel(op, ctx)) return say(`Não encontrei operação com final ${num}. Confira o número na lista de operações.`, [{ label: 'Ver operações', route: C.homeFor(ctx.me) }]);
     const m = op.taxaFinal ? E.metricasOp(op, op.taxaFinal) : null;
     return { nodes: [`Operação ${op.id} (${ui.statusLabel('operacao', op.status)}), face ${fmt.brl(op.face)}:`, ui.kv([['Status', ui.statusLabel('operacao', op.status)], ['Face', fmt.brl(op.face)], ['Taxa', op.taxaFinal ? fmt.taxa(op.taxaFinal) : 'em leilão'], ['Líquido', m ? fmt.brl(m.liquido) : '—']])],
       acts: [{ label: 'Abrir ' + op.id, primary: true, icon: 'arrow-right', route: opRoute(op) }] };
@@ -294,6 +305,106 @@
     }
     if (/janela|24 meses/.test(n)) {
       return say('A janela é de 24 meses desde a 1ª operação paga de cada indicado: 10% da TS como indicação + 30% como gestão (cedente ativo = 1 operação em 90 dias). Relatório no 5º dia útil, contestação em 10 dias, pagamento dia 20 do mês seguinte, mínimo de R$ 100.', [{ label: 'Ver premiação', route: '/originador/premiacao' }]);
+    }
+    return null;
+  }
+
+  /** a operação só aparece para quem é parte dela (ou para a Cedy) */
+  function opVisivel(op, ctx) {
+    const id = ctx.org.id; const k = ctx.key;
+    if (k === 'ops' || k === 'superadmin') return true;
+    if (k === 'cedente') return op.cedenteId === id;
+    if (k === 'financiador') return op.financiadorId === id || (op.status === 'aberta' && (op.canal === 'vitrine' || op.financiadorAlvoId === id));
+    if (k === 'sacado') return op.tituloIds.some((tid) => { const t = db.get('titulos', tid); return !!t && t.sacadoId === id; });
+    if (k === 'originador') return (db.get('orgs', op.cedenteId) || {}).indicadoPor === id;
+    return false;
+  }
+
+  /* ------------------------------- subparceiro ----------------------------- */
+  function subRoute(n, ctx) {
+    const sid = ctx.user.subId; const sp = sid && db.get('subparceiros', sid);
+    if (!sp) return say('Sua conta não está ligada a nenhum subparceiro. Fale com o seu originador.', [{ label: 'Ir para o início', route: C.homeFor(ctx.me) }]);
+    const prem = db.where('premiacoes', (p) => p.subId === sid).sort((a, b) => (a.competencia < b.competencia ? 1 : -1));
+    const repassado = (p) => !!(p.repasseSub && p.repasseSub.status === 'repassado');
+    if (/split|como.*comissao|como funciona/.test(n)) {
+      return say(`Seu split é ${sp.splitPct}% da premiação dos seus indicados. Ele fica congelado em cada competência: mudar o percentual vale só para as próximas. O repasse é feito pelo seu originador, não pela Cedy.`, [{ label: 'Ver minha premiação', primary: true, route: '/originador/premiacao' }]);
+    }
+    if (/repass|falta|pendente/.test(n)) {
+      const pend = prem.filter((p) => p.parteSub > 0 && !repassado(p));
+      const tot = C.round2(C.sum(pend, (p) => p.parteSub));
+      if (!pend.length) return say('Nada pendente: o originador já repassou todas as competências com comissão.', [{ label: 'Ver minha premiação', route: '/originador/premiacao' }]);
+      return { nodes: [`${fmt.plural(pend.length, 'competência aguarda', 'competências aguardam')} repasse do originador, somando ${fmt.brl(tot)}:`, h('ul', { style: 'margin:6px 0 0 16px;list-style:disc' }, pend.slice(0, 5).map((p) => h('li.small', `${fmt.monthLong(p.competencia)} · ${fmt.brl(p.parteSub)}`)))],
+        acts: [{ label: 'Ver minha premiação', primary: true, route: '/originador/premiacao' }] };
+    }
+    if (/comissao|premia|receber|quanto/.test(n)) {
+      const t = C.cal.sp(C.clock.now());
+      const comp = `${t.y}-${String(t.m).padStart(2, '0')}`;
+      const cur = prem.find((p) => p.competencia === comp) || prem[0];
+      if (!cur) return say('Ainda não há comissão apurada para os seus indicados.', [{ label: 'Ver minha premiação', route: '/originador/premiacao' }]);
+      return { nodes: [`Competência ${fmt.monthLong(cur.competencia)}: sua comissão é ${fmt.brl(cur.parteSub || 0)} (${sp.splitPct}% da premiação dos seus indicados), repasse ${repassado(cur) ? 'feito' : 'pendente'}.`],
+        acts: [{ label: 'Ver minha premiação', primary: true, route: '/originador/premiacao' }] };
+    }
+    if (/parado|inativo|indicado/.test(n)) {
+      const cutoff = C.clock.now() - 90 * 86400000;
+      const ceds = db.where('orgs', (o) => o.indicadoPor === ctx.org.id && o.subparceiroId === sid && o.status === 'ativo');
+      const parados = ceds.filter((o) => !db.where('operacoes', (op) => op.cedenteId === o.id && op.pagoEm && op.pagoEm >= cutoff).length);
+      return { nodes: [parados.length ? `${fmt.plural(parados.length, 'indicado seu está', 'indicados seus estão')} sem operação paga há 90 dias: ${parados.slice(0, 4).map((o) => o.fantasia || o.nome).join(', ')}. Sem atividade, a gestão deixa de render.` : 'Todos os seus indicados ativos operaram nos últimos 90 dias.'],
+        acts: [{ label: 'Ver meus indicados', primary: true, route: '/originador/indicados' }] };
+    }
+    return null;
+  }
+
+  /* -------------------------------- superadmin ----------------------------- */
+  function superRoute(n, ctx) {
+    const nomeDe = (uid) => (db.get('users', uid) || {}).nome || 'alguém';
+    if (/aprovac|quatro olhos/.test(n)) {
+      const pend = db.where('aprovacoes', (a) => a.status === 'pendente').sort((a, b) => a.expiraEm - b.expiraEm);
+      if (!pend.length) return say('Nenhuma aprovação pendente.', [{ label: 'Ver aprovações', route: '/super/aprovacoes' }]);
+      const minhas = pend.filter((a) => a.solicitanteId === ctx.user.id).length;
+      return { nodes: [`${fmt.plural(pend.length, 'aprovação aguarda', 'aprovações aguardam')} decisão${minhas ? ` (${fmt.plural(minhas, 'foi pedida por você e precisa de outro Superadmin', 'foram pedidas por você e precisam de outro Superadmin')})` : ''}:`, h('ul', { style: 'margin:6px 0 0 16px;list-style:disc' }, pend.slice(0, 5).map((a) => h('li.small', `${a.titulo} · pedida por ${nomeDe(a.solicitanteId)} · expira ${fmt.rel(a.expiraEm)}`)))],
+        acts: [{ label: 'Decidir aprovações', primary: true, route: '/super/aprovacoes' }] };
+    }
+    if (/incidente|servico|saude|degrad|fora do ar/.test(n)) {
+      const inc = db.where('incidentes', (i) => i.status !== 'resolvido');
+      const prob = db.where('servicos', (s) => s.status !== 'operacional');
+      if (!inc.length && !prob.length) return say('Tudo operacional: sem incidentes abertos e sem serviços degradados.', [{ label: 'Ver saúde', route: '/super' }]);
+      return { nodes: [`${fmt.plural(inc.length, 'incidente aberto', 'incidentes abertos')} e ${fmt.plural(prob.length, 'serviço com problema', 'serviços com problema')}.`,
+        h('ul', { style: 'margin:6px 0 0 16px;list-style:disc' }, [...inc.slice(0, 3).map((i) => h('li.small', `${i.id} (${i.severidade}): ${i.titulo}`)), ...prob.slice(0, 3).map((s) => h('li.small', `${s.nome}: ${s.status}`))])],
+        acts: [{ label: 'Ver incidentes', primary: true, route: '/super/incidentes' }, { label: 'Ver serviços', route: '/super/servicos' }] };
+    }
+    if (/custo|gasto|teto|orcamento/.test(n) && /ia|modelo|token|custo/.test(n)) {
+      const t = C.cal.sp(C.clock.now()); const ini = C.cal.spTs(t.y, t.m, 1, 0, 0);
+      const fim = C.cal.spTs(t.m === 12 ? t.y + 1 : t.y, t.m === 12 ? 1 : t.m + 1, 1, 0, 0);
+      const custo = C.round2(C.sum(db.where('usoIA', (u) => u.dia >= ini && u.dia < fim), (u) => u.custoBRL));
+      const teto = (db.cfg().ia || {}).tetoCustoMesBRL || 4000;
+      return say(`O custo de IA no mês é ${fmt.brl(custo)} de um teto de ${fmt.brl(teto)} (${fmt.pct(custo / teto * 100, 0)}). Acima do teto, o gateway usa a fila e o modelo local antes de chamar o modelo pago.`, [{ label: 'Ver IA e agentes', primary: true, route: '/super/ia' }]);
+    }
+    if (/mercado|manutencao|pausa|funcionalidade|flag/.test(n)) {
+      const cfg = db.cfg(); const off = Object.entries(cfg.flags || {}).filter(([, v]) => v === false).map(([k]) => k);
+      return { nodes: [[cfg.mercadoPausado ? 'O mercado está pausado: lances e publicações estão suspensos.' : 'O mercado está aberto.', cfg.manutencao && cfg.manutencao.ativo ? 'A faixa de manutenção está ativa.' : 'Sem faixa de manutenção.', off.length ? `Funcionalidades desligadas: ${off.join(', ')}.` : 'Todas as funcionalidades estão ligadas.'].join(' ')],
+        acts: [{ label: 'Ver mercado', primary: true, route: '/super/mercado' }] };
+    }
+    if (/backup|rpo|restaur/.test(n)) {
+      const ok = db.all('backups').filter((b) => ['ok', 'verificado'].includes(b.status)).sort((a, b) => b.ts - a.ts)[0];
+      if (!ok) return say('Não há backup íntegro registrado.', [{ label: 'Ver backups', route: '/super/backups' }]);
+      return say(`O último backup íntegro é de ${fmt.datetime(ok.ts)} (${fmt.rel(ok.ts)}, ${ok.tipo}). A meta de RPO é de 8 h.`, [{ label: 'Ver backups', primary: true, route: '/super/backups' }]);
+    }
+    if (/lgpd|titular|privacidade/.test(n)) {
+      const ab = db.where('titulares', (x) => ['recebida', 'em_analise'].includes(x.status)).sort((a, b) => a.prazoAte - b.prazoAte);
+      if (!ab.length) return say('Nenhum pedido de titular aberto.', [{ label: 'Ver LGPD', route: '/super/lgpd' }]);
+      const TIPOS = { acesso: 'acesso', correcao: 'correção', exclusao: 'exclusão', portabilidade: 'portabilidade', revogacao: 'revogação', oposicao: 'oposição' };
+      const venc = ab.filter((x) => x.prazoAte < C.clock.now()).length;
+      return { nodes: [`${fmt.plural(ab.length, 'pedido de titular aberto', 'pedidos de titular abertos')}${venc ? `, ${fmt.plural(venc, 'com prazo vencido', 'com prazo vencido')}` : ''}. O mais urgente é ${ab[0].id} (${TIPOS[ab[0].tipo] || ab[0].tipo}), ${ab[0].prazoAte < C.clock.now() ? 'vencido' : 'vence'} ${fmt.rel(ab[0].prazoAte)}.`],
+        acts: [{ label: 'Ver LGPD', primary: true, route: '/super/lgpd' }] };
+    }
+    if (/seguranca|acesso|login|2fa|ataque/.test(n)) {
+      const sem = C.clock.now() - 7 * 86400000;
+      const falhas = db.where('eventosSeg', (e) => e.tipo === 'login_falho' && e.ts >= sem).length;
+      const bloq = db.where('eventosSeg', (e) => e.tipo === 'ip_bloqueado' && e.ts >= sem).length;
+      const equipe = db.where('users', (u) => u.orgId === 'org-cedy');
+      const sem2fa = equipe.filter((u) => u.twofa === false).length;
+      return { nodes: [`Em 7 dias: ${fmt.plural(falhas, 'login com falha', 'logins com falha')} e ${fmt.plural(bloq, 'IP bloqueado', 'IPs bloqueados')}. ${sem2fa ? `${fmt.plural(sem2fa, 'usuário da equipe está', 'usuários da equipe estão')} sem segundo fator.` : 'Toda a equipe tem segundo fator.'}`],
+        acts: [{ label: 'Ver segurança', primary: true, route: '/super/seguranca' }] };
     }
     return null;
   }
@@ -363,7 +474,7 @@
     if (api) { if (seedQuery) send(seedQuery); return; }
     const role = session.role(); const user = session.user();
     listEl = h('div.asst-msgs');
-    const chips = h('div.asst-chips', CHIPS[role].map((c) => ui.btn(c.length > 30 ? c.slice(0, 30) + '…' : c, { size: 'sm', onclick: () => send(c), title: c })));
+    const chips = h('div.asst-chips', CHIPS[C.shellKey()].map((c) => ui.btn(c.length > 30 ? c.slice(0, 30) + '…' : c, { size: 'sm', onclick: () => send(c), title: c })));
     const inp = ui.input({ placeholder: 'Pergunte sobre sua conta…', aria: 'Pergunta ao assistente', onEnter: (v) => { inputEl.value = ''; send(v); } });
     inputEl = inp;
     const sendBtn = ui.iconBtn('send', { label: 'Enviar pergunta', onclick: () => { const v = String(inputEl.value || '').trim(); inputEl.value = ''; send(v); } });

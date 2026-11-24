@@ -136,24 +136,21 @@
     function stats() {
       const subs = subList();
       const ativos = subs.filter((s) => s.status === 'ativo');
-      const comp = compOf(now());
-      const premMes = myPremiacoes().filter((p) => p.competencia === comp && p.subId);
-      const gerada = C.round2(C.sum(premMes, (p) => p.total));
-      const parteSub = C.round2(C.sum(premMes, (p) => p.parteSub || 0));
-      const liquido = C.round2(C.sum(premMes, (p) => (p.parteOrig !== undefined ? p.parteOrig : p.total)));
-      const pend = myPremiacoes().filter((p) => repasseStatus(p) === 'pendente').length;
       const indVia = db.where('orgs', (o) => o.indicadoPor === ORG && o.subparceiroId);
-      return { subs, ativos, gerada, parteSub, liquido, pend, indVia };
+      const est = C.premiacaoEstMes(indVia);
+      const gerada = est.tot;
+      const parteSub = est.sub;
+      const liquido = C.round2(est.tot - est.sub);
+      const pend = myPremiacoes().filter((p) => repasseStatus(p) === 'pendente').length;
+      return { subs, ativos, gerada, parteSub, liquido, pend, indVia, comp: compOf(now()) };
     }
     function rows() {
-      const comp = compOf(now());
       let list = subList().map((s) => {
         const orgs = subOrgs(s.id);
         const ativos = orgs.filter((o) => { const ops = paidOps(o.id); const lp = ops.length ? ops[ops.length - 1].pagoEm : null; return lp && (now() - lp) < db.cfg().inatividadeDias * DAY; });
         const v30 = C.round2(C.sum(orgs, (o) => vol30(o.id)));
         const ts30v = C.round2(C.sum(orgs, (o) => ts30(o.id)));
-        const premMes = myPremiacoes().filter((p) => p.competencia === comp && p.subId === s.id);
-        const parteMes = C.round2(C.sum(premMes, (p) => p.parteSub || 0));
+        const parteMes = C.premiacaoEstMes(orgs).sub;
         const pend = myPremiacoes().filter((p) => p.subId === s.id && repasseStatus(p) === 'pendente');
         return { s, orgs, ativos, v30, ts30v, parteMes, pend: pend.length, pendTotal: C.round2(C.sum(pend, (p) => p.parteSub || 0)) };
       });
@@ -227,12 +224,12 @@
         return h('div.grid.g4.keep2',
           ui.kpi({ label: 'Subparceiros ativos', value: s.ativos.length, icon: 'network', tone: 'green', hint: s.subs.length + ' no total' }),
           ui.kpi({ label: 'Indicados via subparceiros', value: s.indVia.length, icon: 'users', tone: 'blue' }),
-          ui.kpi({ label: 'Premiação da rede no mês', value: Math.round(s.gerada), fmt: 'brl', icon: 'award', tone: 'amber', hint: 'Total apurado com subparceiro' }),
+          ui.kpi({ label: 'Premiação estimada da rede no mês', value: Math.round(s.gerada), fmt: 'brl', icon: 'award', tone: 'amber', hint: 'Subparceiros, até a apuração' }),
           ui.kpi({ label: 'Repasses pendentes', value: s.pend, icon: 'hand-coins', tone: 'amber', hint: 'Competências a repassar' }));
       }),
       ui.live(['subparceiros', 'premiacoes', 'orgs', 'operacoes'], () => {
         const s = stats();
-        return ui.card({ title: 'Composição do mês', subtitle: 'Parte dos subparceiros, líquido da Lumen e pendências.' },
+        return ui.card({ title: 'Composição estimada de ' + fmt.monthLong(s.comp), subtitle: 'Parte dos subparceiros, líquido da Lumen e pendências.' },
           h('div.grid.g3', ui.kpi({ label: 'Parte dos subparceiros', value: Math.round(s.parteSub), fmt: 'brl', icon: 'users' }), ui.kpi({ label: 'Líquido da Lumen', value: Math.round(s.liquido), fmt: 'brl', icon: 'hand-coins', tone: 'green' }), ui.kpi({ label: 'Indicados diretos x rede', value: s.indVia.length, icon: 'building-2', hint: db.where('orgs', (o) => o.indicadoPor === ORG && !o.subparceiroId).length + ' diretos' })));
       }),
       ui.toolbar(search, stSel, sortSel),
@@ -320,9 +317,7 @@
   function tabVisao(ctx, s) {
     const orgs = subOrgs(s.id);
     const v30 = C.round2(C.sum(orgs, (o) => vol30(o.id)));
-    const comp = compOf(now());
-    const premMes = myPremiacoes().filter((p) => p.competencia === comp && p.subId === s.id);
-    const parteMes = C.round2(C.sum(premMes, (p) => p.parteSub || 0));
+    const parteMes = C.premiacaoEstMes(orgs).sub;
     const pend = myPremiacoes().filter((p) => p.subId === s.id && repasseStatus(p) === 'pendente');
     const f = orgFunnel(orgs);
     const cats = []; { const t = cal.sp(now()); for (let i = 5; i >= 0; i--) { let m = t.m - i, y = t.y; while (m < 1) { m += 12; y--; } cats.push(y + '-' + String(m).padStart(2, '0')); } }
@@ -332,7 +327,7 @@
       h('div.grid.g4.keep2',
         ui.kpi({ label: 'Indicados', value: orgs.length, icon: 'users' }),
         ui.kpi({ label: 'Volume 30d', value: Math.round(v30), fmt: 'brl', icon: 'trending-up' }),
-        ui.kpi({ label: 'Comissão do sub no mês', value: Math.round(parteMes), fmt: 'brl', icon: 'hand-coins', tone: 'amber', hint: 'Split ' + s.splitPct + '%' }),
+        ui.kpi({ label: 'Comissão estimada do sub no mês', value: Math.round(parteMes), fmt: 'brl', icon: 'hand-coins', tone: 'amber', hint: 'Split ' + s.splitPct + '%, até a apuração' }),
         ui.kpi({ label: 'Repasses pendentes', value: pend.length, icon: 'flag', tone: pend.length ? 'amber' : 'green' })),
       h('div.grid.g-main-side',
         h('div.stack',

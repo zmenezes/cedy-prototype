@@ -32,8 +32,8 @@
 
 .fin-card { display: flex; flex-direction: column; gap: var(--s-3); height: 100%; }
 .fin-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
-.fin-card-nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-2) var(--s-4); }
-.fin-card-nums > div { min-width: 0; }
+.fin-card-nums { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-2) var(--s-4); }
+.fin-card-nums > div { min-width: 0; flex: 0 1 auto; }
 .fin-num { font-size: var(--fs-xl); font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .fin-card-nums small { color: var(--ink-3); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fin-ratings { display: inline-flex; gap: 4px; margin-left: 6px; vertical-align: middle; }

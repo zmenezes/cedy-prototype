@@ -211,7 +211,7 @@
     /* ------------------------- 9. eventos de segurança ------------------------- */
     let esN = 0;
     const mkes = (ts, tipo, userId, orgId, ip, sev, detalhe) => { const id = 'es-' + String(++esN).padStart(3, '0'); S.eventosSeg[id] = { id, ts, tipo, userId, orgId, ip, severidade: sev, detalhe }; };
-    const tAtk = d(11, 2, 3, 12);
+    const tAtk = d(11, 22, 3, 12);
     for (let k = 0; k < 6; k++) mkes(tAtk + k * 97e3, 'login_falho', 'u-tecno-1', 'c-tecnoparts', '45.227.19.44', k < 4 ? 'media' : 'alta', 'Senha incorreta (' + (k + 1) + 'a tentativa em minutos, fora do horário comercial)');
     mkes(tAtk + 9 * 60e3, 'ip_bloqueado', 'u-tecno-1', 'c-tecnoparts', '45.227.19.44', 'alta', 'IP bloqueado por 24h após 6 falhas seguidas; conta preservada, sem invasão.');
     mkes(d(11, 4, 9, 20), 'login_falho', 'u-aurora-2', 'c-aurora', '187.44.12.9', 'baixa', 'Senha incorreta, seguida de acesso bem-sucedido.');

@@ -21,9 +21,9 @@
 
 /* Matriz papel x permissão */
 .sgv-matrix td, .sgv-matrix th { text-align: center; }
-.sgv-ph { font-size: 10px; letter-spacing: 0; max-width: 80px; white-space: normal; }
+.sgv-ph { font-size: 11px; letter-spacing: 0; width: 92px; min-width: 84px; max-width: 104px; white-space: normal; line-height: 1.25; text-transform: none; }
 .sgv-matrix th, .sgv-matrix td { padding-left: var(--s-2); padding-right: var(--s-2); }
-.sgv-matrix td:first-child, .sgv-matrix th:first-child { text-align: left; min-width: 150px; white-space: normal; }
+.sgv-matrix td:first-child, .sgv-matrix th:first-child { text-align: left; min-width: 190px; white-space: normal; position: sticky; left: 0; background: var(--surface); z-index: 1; }
 .sgv-matrix th { white-space: normal; line-height: 1.25; vertical-align: bottom; }
 .sgv-papel small { display: block; margin-top: 2px; font-size: var(--fs-xs); }
 .sgv-papel strong { display: block; }
@@ -70,4 +70,11 @@
   .sgv-testrow { grid-template-columns: 1fr; }
   .sgv-strip { grid-template-columns: 1fr; }
   .sgv-clip { max-width: 22ch; }
+  .tbl.sgv-matrix { display: table; width: max-content; min-width: 100%; }
+  .tbl.sgv-matrix thead { display: table-header-group; }
+  .tbl.sgv-matrix tbody { display: table-row-group; }
+  .tbl.sgv-matrix tr, .tbl.sgv-matrix tbody tr { display: table-row; border: 0; padding: 0; background: none; }
+  .tbl.sgv-matrix th, .tbl.sgv-matrix td { display: table-cell; width: auto; padding: 8px var(--s-2); border-bottom: 1px solid var(--line); text-align: center; }
+  .tbl.sgv-matrix td::before { display: none; }
+  .tbl.sgv-matrix td:first-child, .tbl.sgv-matrix th:first-child { text-align: left; min-width: 118px; max-width: 132px; font-size: var(--fs-sm); }
 }

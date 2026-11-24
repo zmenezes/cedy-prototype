@@ -307,9 +307,9 @@
       { id: 'lider', nome: 'Líder da Mesa (perfil admin)', desc: 'Quem tem perfil admin acumula todas as permissões operacionais, menos ver como e aplicar configuração.', get: (p) => p !== 'ops.verComo' && p !== 'ops.config.aplicar' },
       { id: 'super', nome: 'Superadmin', desc: 'Dono da plataforma: configura, aprova em quatro olhos e acessa saúde, dados e governança.', get: () => true },
     ];
-    const head = h('tr', h('th', 'Papel'), perms.map((p) => h('th.sgv-ph', { title: permLabel(p) }, h('span', permLabel(p)))));
+    const head = h('tr', h('th', 'Permissão'), linhas.map((l) => h('th.sgv-ph', { title: l.nome }, h('span', l.nome))));
     const grid = h('div.tbl-scroll', h('table.tbl.sgv-matrix', h('thead', head),
-      h('tbody', linhas.map((l) => h('tr', h('td.sgv-papel', h('strong', l.nome)), perms.map((p) => h('td', { class: 'ta-center' }, l.get(p) ? h('span.sgv-yes', { title: 'Pode: ' + permLabel(p) }, icon('check', 15)) : h('span.sgv-no', { title: 'Não pode: ' + permLabel(p) }, icon('x', 13)))))))));
+      h('tbody', perms.map((p) => h('tr', h('td.sgv-papel', h('strong', permLabel(p))), linhas.map((l) => h('td', { class: 'ta-center' }, l.get(p) ? h('span.sgv-yes', { title: l.nome + ' pode: ' + permLabel(p) }, icon('check', 15)) : h('span.sgv-no', { title: l.nome + ' não pode: ' + permLabel(p) }, icon('x', 13)))))))));
     const cards = h('div.sgv-grid2', linhas.map((l) => {
       const tem = perms.filter((p) => l.get(p));
       const nao = perms.filter((p) => !l.get(p));
