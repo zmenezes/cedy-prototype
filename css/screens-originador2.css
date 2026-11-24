@@ -1,0 +1,28 @@
+/* =========================================================================
+   Cedy protótipo 0.1, Subparceiros (orig- rede, sub- visão do subparceiro).
+   Só tokens (var(--...)); impressão reaproveita .orig-print-*.
+   ========================================================================= */
+
+/* links discretos dentro de tabelas e textos */
+button.linklike { appearance: none; background: none; border: 0; padding: 0; color: var(--blue-ink); font: inherit; font-weight: 600; cursor: pointer; text-align: left; }
+button.linklike:hover { text-decoration: underline; }
+button.linklike:focus-visible { box-shadow: var(--sh-focus); outline: none; border-radius: 4px; }
+button.linklike.small { font-size: var(--fs-sm); }
+
+/* ações lado a lado nas linhas do extrato (comissão / repasse) */
+.orig-actions { display: inline-flex; gap: var(--s-2); align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+
+/* demonstrativo impresso: cabe em retrato mesmo com 4 colunas extras */
+@media print {
+  body.is-printing .orig-print-tbl { font-size: 11px; }
+  body.is-printing .orig-print-tbl th, body.is-printing .orig-print-tbl td { padding: 4px 6px; }
+}
+
+/* ------------------------------ responsivo ------------------------------ */
+@media (max-width: 760px) {
+  .orig-actions { gap: var(--s-1); }
+  button.linklike.small { font-size: var(--fs-xs); }
+}
+
+/* lista de subparceiros: nome não quebra em coluna estreita */
+.orig-subtbl td:first-child, .orig-subtbl th:first-child { min-width: 240px; }

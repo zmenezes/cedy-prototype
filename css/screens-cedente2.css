@@ -1,0 +1,38 @@
+/* Cedy cedente2: operações, conta, limites e relatórios do cedente. Prefixo cd2. */
+.cd2-need { background: var(--amber-tint); }
+.cd2-opid { font-weight: 700; white-space: nowrap; }
+.cd2-chan { display: flex; align-items: center; gap: var(--s-2); margin-top: 4px; white-space: nowrap; }
+.cd2-next { display: flex; flex-direction: column; gap: 2px; }
+.cd2-offer { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-3) var(--s-4); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); flex-wrap: wrap; }
+.cd2-offer.is-best { border-color: var(--green); background: var(--green-tint); }
+.cd2-offer-main { flex: 1 1 200px; min-width: 0; }
+.cd2-offer-taxa { font-size: var(--fs-xl); font-weight: 700; font-variant-numeric: tabular-nums; }
+.cd2-offer-sub { color: var(--ink-3); font-size: var(--fs-sm); }
+.cd2-best-liq { font-size: var(--fs-3xl); font-weight: 700; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.cd2-kv-hero { display: flex; align-items: baseline; gap: var(--s-3); flex-wrap: wrap; }
+.cd2-hero-act { margin-top: var(--s-3); }
+.cd2-side-sec { display: flex; flex-direction: column; gap: var(--s-2); }
+.cd2-side-sec > h4 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+.cd2-tit-row { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s-3); padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: var(--fs-sm); }
+.cd2-tit-row > :first-child { min-width: 0; overflow-wrap: anywhere; }
+.cd2-tit-row:last-child { border-bottom: 0; }
+.cd2-tit-val { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; white-space: nowrap; }
+.cd2-agenda-week { border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s-3) var(--s-4); background: var(--surface); }
+.cd2-case { border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s-4) var(--s-5); background: var(--surface); display: flex; flex-direction: column; gap: var(--s-2); }
+.cd2-case.is-urgent { border-color: var(--amber); }
+.cd2-mono { font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace); font-size: 0.92em; }
+.cd2-match { display: flex; align-items: flex-start; gap: 8px; font-size: var(--fs-sm); }
+.cd2-match .ok { color: var(--green-ink); }
+.cd2-match .no { color: var(--red-ink); }
+@media (max-width: 760px) {
+  .cd2-best-liq { font-size: var(--fs-2xl); }
+  .cd2-offer-main { flex-basis: 100%; }
+  .g3.keep2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media print {
+  .sidebar, .topbar, .bottomnav, .bgfx, #toast-host, #overlay-root, .tb-clock, .page-actions { display: none !important; }
+  .shell { display: block !important; }
+  .main-col { display: block !important; }
+  .page { max-width: none; padding: 0; }
+  .card, .kpi { box-shadow: none !important; break-inside: avoid; }
+}

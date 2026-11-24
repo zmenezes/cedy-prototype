@@ -1,0 +1,34 @@
+/* Cedy Superadmin dados (super2.js): qualidade, catálogo, backups, LGPD. Prefixo sdt-. */
+.sdt-page { gap: var(--s-4); }
+.sdt-badges { align-items: center; flex-wrap: wrap; }
+.sdt-h { font-size: var(--fs-lg); margin: var(--s-4) 0 var(--s-2); }
+.sdt-pre { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s-3); overflow: auto; font-size: var(--fs-sm); max-height: 260px; white-space: pre-wrap; word-break: break-word; }
+.sdt-retgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
+.sdt-foot { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.sdt-prazo { display: inline-flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.sdt-tend { font-size: var(--fs-sm); font-weight: 600; white-space: nowrap; }
+.sdt-tend.is-alta { color: var(--red-ink); }
+.sdt-tend.is-queda { color: var(--green-ink); }
+.sdt-tend.is-igual { color: var(--ink-4); }
+
+/* Calendário de backups: grade de 35 dias, só tokens, sem cor chapada */
+.sdt-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--s-2); }
+.sdt-day { display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 44px; border: 1px solid var(--line); border-radius: var(--r-md); font-size: var(--fs-sm); color: var(--ink-2); background: var(--surface); }
+.sdt-day.is-ok { border-color: var(--green); color: var(--green-ink); }
+.sdt-day.is-incr { border-color: var(--teal); color: var(--teal-ink); }
+.sdt-day.is-falha { border-color: var(--red); color: var(--red-ink); }
+.sdt-day.is-vazio { color: var(--ink-4); border-style: dashed; }
+.sdt-legend { gap: var(--s-4); flex-wrap: wrap; margin-top: var(--s-3); align-items: center; }
+.sdt-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 4px; border: 2px solid currentColor; margin-right: 6px; vertical-align: baseline; }
+.sdt-swatch.is-ok { color: var(--green); }
+.sdt-swatch.is-incr { color: var(--teal); }
+.sdt-swatch.is-falha { color: var(--red); }
+.sdt-swatch.is-vazio { color: var(--ink-4); }
+
+@media (max-width: 1023px) {
+  .sdt-retgrid { grid-template-columns: 1fr; }
+  .sdt-cal { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (max-width: 859px) {
+  .sdt-day { min-height: 40px; }
+}

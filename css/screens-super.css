@@ -1,0 +1,31 @@
+/* Cedy super: Superadmin (prefixo sup-). Usa tokens; sem cores fixas. */
+.sup-page { display: flex; flex-direction: column; gap: var(--s-4); }
+.sup-status { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+.sup-status.tone-green { border-color: var(--green); }
+.sup-status.tone-amber { border-color: var(--amber); }
+.sup-status.tone-red { border-color: var(--red); }
+.sup-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-4); }
+.sup-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); }
+.sup-group { display: flex; flex-direction: column; gap: var(--s-2); }
+.sup-group-t { display: flex; align-items: baseline; gap: var(--s-2); }
+.sup-feed { display: flex; align-items: flex-start; gap: var(--s-3); padding: var(--s-2) 0; border-bottom: 1px dashed var(--line); }
+.sup-feed:last-child { border-bottom: 0; }
+.sup-feed .grow { flex: 1; min-width: 0; }
+.sup-formgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
+.sup-demo { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-3); border: 1px dashed var(--line); border-radius: var(--r-md); }
+.sup-alert { display: flex; align-items: flex-start; gap: var(--s-3); padding: var(--s-3) var(--s-4); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+.sup-alert.sev-alta { border-color: var(--red); }
+.sup-alert.sev-media { border-color: var(--amber); }
+.sup-alert .grow { flex: 1; min-width: 0; }
+.sup-flag { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-2) 0; border-bottom: 1px dashed var(--line); }
+.sup-flag:last-child { border-bottom: 0; }
+.sup-flag .switch { flex: 1; }
+@media (max-width: 1024px) {
+  .sup-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sup-grid2 { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 768px) {
+  .sup-alert { flex-wrap: wrap; }
+  .sup-flag { flex-wrap: wrap; }
+  .sup-formgrid { grid-template-columns: minmax(0, 1fr); }
+}

@@ -1,0 +1,88 @@
+/* =========================================================================
+   Cedy protótipo 0.1, telas do Originador (orig-) e do Sacado (sac-).
+   Só tokens (var(--...)); a única exceção é a folha de impressão, que
+   usa preto sobre branco por ser papel.
+   ========================================================================= */
+
+/* ------------------------------- funil ---------------------------------- */
+.orig-funnel { display: flex; flex-direction: column; gap: 6px; }
+.orig-fstep { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 6px 8px; border-radius: var(--r-md); min-height: 44px; transition: background var(--t-fast); }
+.orig-fstep:hover { background: var(--surface-2); }
+.orig-fstep:focus-visible { box-shadow: var(--sh-focus); outline: none; }
+.orig-flab { flex: none; width: 112px; font-weight: 600; font-size: var(--fs-sm); color: var(--ink-2); }
+.orig-fbar { display: flex; align-items: center; justify-content: flex-end; height: 34px; min-width: 48px; width: var(--w, 20%); border-radius: 8px; padding: 0 10px; background: var(--blue); transition: width var(--t-slow) var(--ease-out); }
+.orig-fbar b { color: var(--on-blue); font-variant-numeric: tabular-nums; font-size: var(--fs-md); }
+.orig-fbar[data-tone="neutral"] { background: var(--ink-4); }
+.orig-fbar[data-tone="amber"] { background: var(--amber); }
+.orig-fbar[data-tone="green"] { background: var(--green); }
+.orig-fbar[data-tone="red"] { background: var(--red); }
+.orig-fbar[data-tone="neutral"] b, .orig-fbar[data-tone="amber"] b, .orig-fbar[data-tone="green"] b { color: var(--navy); }
+
+/* ------------------------------ estados --------------------------------- */
+.orig-inat { color: var(--red-ink); font-weight: 650; }
+.orig-ok { color: var(--green-ink); }
+.orig-warn { color: var(--amber-ink); }
+
+/* itens de lista clicáveis (button) alinhados à esquerda, como as linhas comuns */
+button.list-item { width: 100%; text-align: left; }
+@media (max-width: 760px) { .orig-tblcard { background: transparent; border: 0; box-shadow: none; } }
+@media (max-width: 1180px) { .orig-tblcard .orig-col-wide { display: none; } }
+.orig-dense .tbl th, .orig-dense .tbl td { padding-left: 10px; padding-right: 10px; }
+@media (max-width: 760px) {
+  .orig-flat .tbl tbody { gap: 0; }
+  .orig-flat .tbl tbody tr { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 12px 0; background: transparent; }
+  .orig-flat .tbl tbody tr:last-child { border-bottom: 0; }
+}
+
+/* --------------------------- link de indicação -------------------------- */
+.orig-linkbox { display: flex; align-items: flex-start; gap: var(--s-4); min-width: 0; }
+.orig-linkbox > div { min-width: 0; flex: 1 1 0; display: flex; flex-direction: column; gap: var(--s-1); }
+.orig-url { overflow-wrap: anywhere; line-height: 1.45; }
+.orig-qr { background: var(--on-blue); border-radius: 12px; padding: 8px; width: 112px; height: 112px; flex: none; box-shadow: var(--sh-1); }
+.orig-qr rect { fill: var(--brand-navy); }
+.orig-actions { display: inline-flex; gap: var(--s-1); justify-content: flex-end; flex-wrap: nowrap; }
+.orig-slot { flex: none; width: 40px; height: 40px; }
+.orig-first:empty { display: none; }
+
+/* ------------------------------ impressão ------------------------------- */
+.orig-print-doc { display: none; }
+.orig-print-tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+.orig-print-tbl th, .orig-print-tbl td { border: 1px solid #999; padding: 6px 8px; text-align: left; }
+.orig-print-tbl th { background: #eee; }
+@media print {
+  body.is-printing { background: #fff; }
+  body.is-printing #app, body.is-printing #overlay-root, body.is-printing #toast-host, body.is-printing .bgfx { display: none !important; }
+  body.is-printing .orig-print-doc { display: block !important; color: #000; font-family: system-ui, sans-serif; }
+  body.is-printing .orig-print-doc h1 { font-size: 20px; margin-bottom: 4px; }
+  body.is-printing .orig-print-doc p { font-size: 12px; color: #444; }
+}
+
+/* ------------------------------- sacado --------------------------------- */
+.sac-due { display: flex; flex-direction: column; }
+.sac-due-item { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.sac-due-item:last-child { border-bottom: 0; }
+.sac-due-dia { flex: none; width: 66px; text-align: center; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 4px; display: flex; flex-direction: column; }
+.sac-due-dia strong { font-size: var(--fs-md); }
+.sac-due-dia small { color: var(--ink-3); font-size: var(--fs-xs); }
+.sac-due-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 104px; align-items: center; gap: 10px; padding: 4px 0; font-size: var(--fs-sm); }
+.sac-due-row > .badge { justify-self: end; }
+.sac-due-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sac-due-sum { display: flex; justify-content: space-between; gap: 10px; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line); font-size: var(--fs-sm); color: var(--ink-3); }
+.sac-due-sum strong { color: var(--ink); }
+.sac-paybox { background: var(--surface-2); border: 1px dashed var(--line-strong); border-radius: var(--r-md); padding: 12px 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; }
+.sac-payline { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-width: 0; }
+.sac-payline > div { min-width: 0; overflow-wrap: anywhere; }
+.sac-punct { display: flex; flex-direction: column; }
+.sac-punct strong { font-size: var(--fs-2xl); }
+.sac-tit { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.sac-tit:last-child { border-bottom: 0; }
+.sac-tit > .grow { flex: 1 1 120px; }
+
+/* ------------------------------ responsivo ------------------------------ */
+@media (max-width: 760px) {
+  .orig-flab { width: 88px; }
+  .orig-qr { width: 96px; height: 96px; }
+  .sac-due-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; padding: 6px 0; }
+  .sac-due-name { grid-column: 1 / -1; }
+  .sac-paybox { grid-template-columns: minmax(0, 1fr); }
+}

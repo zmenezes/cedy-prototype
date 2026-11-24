@@ -1,0 +1,80 @@
+/* Telas do cedente (A): início, títulos, importar, nova operação. Prefixo: ced-. */
+
+.ced-big { font-size: var(--fs-3xl); font-weight: 700; letter-spacing: -0.015em; line-height: 1.15; }
+
+/* atenção */
+.ced-attn { display: flex; flex-direction: column; }
+.ced-attn-item { display: flex; align-items: center; gap: var(--s-3); padding: 12px 0; border-bottom: 1px solid var(--line); }
+.ced-attn-item:last-child { border-bottom: 0; }
+.ced-attn-ic { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 12px; background: var(--surface-3); color: var(--ink-3); }
+.ced-attn-ic.tone-blue { background: var(--blue-tint); color: var(--blue-ink); }
+.ced-attn-ic.tone-amber { background: var(--amber-tint); color: var(--amber-ink); }
+.ced-attn-ic.tone-red { background: var(--red-tint); color: var(--red-ink); }
+.ced-attn-ic.tone-teal { background: var(--teal-tint); color: var(--teal-ink); }
+.ced-attn-ic.tone-green { background: var(--green-tint); color: var(--green-ink); }
+.ced-attn-item .grow { min-width: 0; }
+.ced-attn-act { display: flex; align-items: center; gap: var(--s-3); flex: none; }
+.ced-attn-act:empty { display: none; }
+@media (max-width: 640px) {
+  .ced-attn-item { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: start; row-gap: var(--s-2); }
+  .ced-attn-act { grid-column: 2; justify-content: space-between; flex-wrap: wrap; }
+}
+
+/* volume: taxas por mês */
+.ced-taxrow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s-2); margin-top: var(--s-3); }
+.ced-taxcell { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ced-taxcell small { color: var(--ink-3); }
+@media (max-width: 640px) { .ced-taxrow { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* recebimentos */
+.ced-rec { display: flex; flex-direction: column; }
+.ced-rec-item { display: flex; align-items: center; gap: var(--s-3); padding: 10px 0; border-bottom: 1px solid var(--line); }
+.ced-rec-item:last-child { border-bottom: 0; }
+.ced-rec-dia { flex: none; width: 64px; display: flex; flex-direction: column; align-items: center; line-height: 1.25; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 6px 2px; }
+.ced-rec-dia small { color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; }
+.ced-mkt { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); margin-top: var(--s-5); padding-top: var(--s-4); border-top: 1px solid var(--line); }
+
+/* faixa de preço (sugestão IA) */
+.ced-range { position: relative; height: 8px; border-radius: 8px; background: var(--line-strong); margin: var(--s-4) 2px var(--s-3); }
+.ced-range-bar { position: absolute; top: 0; bottom: 0; border-radius: 8px; background: var(--violet); opacity: 0.55; }
+.ced-range-pin { position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--surface); border: 3px solid var(--violet); box-shadow: var(--sh-1); }
+.ced-why { margin: var(--s-3) 0; padding-left: 18px; list-style: disc; display: flex; flex-direction: column; gap: 4px; }
+
+/* títulos: flags e drawer */
+.ced-flags { display: inline-flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; font-weight: 650; color: var(--ink-2); }
+.ced-sac { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-1) var(--s-2); }
+.ced-docs, .ced-flaglist, .ced-lotes, .ced-manlist { display: flex; flex-direction: column; }
+.ced-docs { gap: 2px; }
+.ced-flaglist { gap: var(--s-3); }
+.ced-doc, .ced-flag { display: flex; align-items: flex-start; gap: var(--s-3); }
+.ced-doc { padding: 9px 0; border-bottom: 1px dashed var(--line); }
+.ced-doc:last-child { border-bottom: 0; }
+.ced-doc-ic { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--surface-3); color: var(--ink-3); }
+.ced-doc-ic.ok { background: var(--green-tint); color: var(--green-ink); }
+.ced-flag-ic { flex: none; margin-top: 1px; }
+.ced-flag-ic.erro { color: var(--red-ink); }
+.ced-flag-ic.aviso { color: var(--amber-ink); }
+
+/* barra de seleção fixa */
+.ced-sticky { position: sticky; bottom: calc(var(--s-4) + var(--safe-b)); z-index: var(--z-sticky); margin-top: var(--s-4); }
+.ced-sticky-in { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-lg); box-shadow: var(--sh-3); padding: var(--s-3) var(--s-4); }
+
+.ced-larline { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s-3) var(--s-4); }
+
+/* listas de lotes e linhas */
+.ced-lotes, .ced-manlist { gap: 0; }
+.ced-lote { display: flex; align-items: center; gap: var(--s-3); padding: 11px 0; border-bottom: 1px solid var(--line); }
+.ced-lote:last-child { border-bottom: 0; }
+
+/* revisão da importação */
+.ced-col-prog { min-width: 200px; }
+
+@media (max-width: 859px) {
+  .ced-big { font-size: var(--fs-2xl); }
+  .ced-sticky { bottom: calc(var(--bottomnav-h) + var(--s-3) + var(--safe-b)); }
+}
+
+/* resumo fixo da nova operação */
+@media (min-width: 1101px) {
+  .ced-aside { position: sticky; top: 88px; align-self: start; }
+}

@@ -1,0 +1,29 @@
+/* Financiador B: carteira, repasses, política, agente, faturamento, relatórios. Tokens only, sem hex. */
+.tbl .num, .tbl .strong.num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.fn2-segwrap { overflow-x: auto; padding-bottom: 2px; }
+.fn2-segwrap .seg-btn { min-height: 40px; }
+.fn2-segwrap .seg { min-width: max-content; }
+.fn2-charts > * { min-width: 0; }
+/* Valores tabulares nunca quebram: taxas, datas, R$. */
+.tbl .num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.fn2-h4 { margin: var(--s-4) 0 var(--s-2); font-size: 13px; font-weight: 700; color: var(--ink-2); }
+ul.fn2-evid { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; }
+ul.fn2-evid li { font-size: 12.5px; color: var(--ink-2); }
+.fn2-savebar { position: sticky; bottom: 0; z-index: 5; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s-3) var(--s-4); box-shadow: var(--shadow-2); }
+.fn2-savebar-in { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.fn2-boleto { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14px; letter-spacing: 0.02em; background: var(--surface-2); border: 1px dashed var(--line); border-radius: var(--r-md); padding: var(--s-3) var(--s-4); overflow-x: auto; white-space: nowrap; }
+ol.fn2-ladder { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-2); }
+ol.fn2-ladder li { display: flex; gap: var(--s-3); align-items: flex-start; padding: var(--s-2) var(--s-3); border: 1px solid var(--line); border-radius: var(--r-md); }
+ol.fn2-ladder li.is-cur { border-color: var(--teal); background: var(--teal-tint); }
+ol.fn2-ladder li.is-locked { opacity: 0.75; }
+ol.fn2-ladder strong { min-width: 76px; }
+ol.fn2-ladder span { font-size: 12.5px; color: var(--ink-2); }
+@media (max-width: 760px) {
+  .fn2-savebar-in { align-items: stretch; flex-direction: column; }
+  .fn2-savebar-in .btn { min-height: 44px; }
+}
+@media print {
+  .fn2-no-print, .sidebar, .topbar, .bottomnav, .tb-clock, #toast-host, .fn2-savebar { display: none !important; }
+  .fn2-report .card { break-inside: avoid; }
+  .bgfx { display: none !important; }
+}

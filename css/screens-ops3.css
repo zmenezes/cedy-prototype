@@ -1,0 +1,12 @@
+/* =========================================================================
+   Cedy ops3: solicitações da Mesa (quatro olhos). Prefixo op3-.
+   Só tokens (dark mode ok).
+   ========================================================================= */
+.op3-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-4); }
+.op3-status { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.op3-page { min-width: 0; }
+.op3-page > * { min-width: 0; max-width: 100%; }
+
+@media (max-width: 760px) {
+  .op3-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
+}

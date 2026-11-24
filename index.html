@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Cedy · Protótipo 0.1</title>
+  <meta name="description" content="Protótipo navegável do app Cedy: marketplace de antecipação de recebíveis.">
+  <meta name="theme-color" content="#001F42">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="assets/logo/favicon.ico" sizes="48x48">
+  <link rel="icon" href="assets/logo/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/logo/apple-touch-icon-light.png">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/shell.css">
+  <link rel="stylesheet" href="css/screens-auth.css">
+  <link rel="stylesheet" href="css/screens-shared.css">
+  <link rel="stylesheet" href="css/screens-cedente.css">
+  <link rel="stylesheet" href="css/screens-cedente2.css">
+  <link rel="stylesheet" href="css/screens-financiador.css">
+  <link rel="stylesheet" href="css/screens-financiador2.css">
+  <link rel="stylesheet" href="css/screens-originador.css">
+  <link rel="stylesheet" href="css/screens-originador2.css">
+  <link rel="stylesheet" href="css/screens-ops.css">
+  <link rel="stylesheet" href="css/screens-ops2.css">
+  <link rel="stylesheet" href="css/screens-ops3.css">
+  <link rel="stylesheet" href="css/screens-super.css">
+  <link rel="stylesheet" href="css/screens-super2.css">
+  <link rel="stylesheet" href="css/screens-super3.css">
+  <link rel="stylesheet" href="css/screens-ds.css">
+  <style>
+    #boot { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: #001F42; color: #fff; transition: opacity 400ms ease; }
+    #boot.done { opacity: 0; pointer-events: none; }
+    #boot div { display: flex; flex-direction: column; align-items: center; gap: 22px; font: 500 14px Inter, system-ui, sans-serif; color: #9fb4d0; }
+    #boot img { width: 180px; height: auto; }
+  </style>
+</head>
+<body>
+  <div id="boot" role="status" aria-live="polite"><div><img src="assets/logo/horizontal-dark.svg" alt="Cedy"><span>Preparando o ambiente de demonstração…</span></div></div>
+  <noscript>O protótipo da Cedy precisa de JavaScript.</noscript>
+  <div id="app"></div>
+  <div id="overlay-root"></div>
+  <div id="toast-host" aria-live="polite"></div>
+
+  <script src="js/core/icons.js"></script>
+  <script src="js/core/util.js"></script>
+  <script src="js/core/store.js"></script>
+  <script src="js/core/engine.js"></script>
+  <script src="js/core/ui.js"></script>
+  <script src="js/core/charts.js"></script>
+  <script src="js/core/flows.js"></script>
+  <script src="js/core/router.js"></script>
+  <script src="js/core/shell.js"></script>
+  <script src="js/data/seed.js"></script>
+  <script src="js/data/seed-plataforma.js"></script>
+  <script src="js/screens/auth.js"></script>
+  <script src="js/screens/shared.js"></script>
+  <script src="js/screens/assistant.js"></script>
+  <script src="js/screens/cedente.js"></script>
+  <script src="js/screens/cedente2.js"></script>
+  <script src="js/screens/financiador.js"></script>
+  <script src="js/screens/financiador2.js"></script>
+  <script src="js/screens/originador.js"></script>
+  <script src="js/screens/originador2.js"></script>
+  <script src="js/screens/sacado.js"></script>
+  <script src="js/screens/ops.js"></script>
+  <script src="js/screens/ops2.js"></script>
+  <script src="js/screens/ops3.js"></script>
+  <script src="js/screens/super.js"></script>
+  <script src="js/screens/super2.js"></script>
+  <script src="js/screens/super3.js"></script>
+  <script src="js/screens/ds.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
