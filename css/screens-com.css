@@ -1,6 +1,7 @@
 /* Central de comunicação: caixa de entrada, sino, conversa e modais (prefixo cm-) */
 
 /* ------------------------------ caixa de entrada ------------------------------ */
+.cm-page > .callout, .cm-page > .cm-aviso { margin-bottom: var(--s-4); }
 .cm-toolbar { margin-bottom: var(--s-3); }
 .cm-toolbar .select { min-width: 190px; }
 .cm-chips { margin-bottom: var(--s-4); }

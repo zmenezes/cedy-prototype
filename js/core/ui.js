@@ -85,6 +85,7 @@
   ui.kpi = function (o) {
     const kf = { brl: (v) => fmt.brl(v, { round: v > 1000 }), brlc: (v) => fmt.brlCompact(v), pct: (v) => fmt.pct(v) }[o.fmt] || ((v) => fmt.num(Math.round(v)));
     const valEl = h('div.kpi-value', typeof o.value === 'number' && o.count !== false && o.display === undefined ? { 'data-count': o.value, 'data-fmt': o.fmt || 'num' } : null, o.display !== undefined ? o.display : (typeof o.value === 'number' ? kf(o.value) : o.value));
+    if (String(valEl.textContent).length > 11) valEl.setAttribute('data-long', '1');
     return h('div', { class: ['kpi', o.tone && 'kpi-' + o.tone, o.onclick && 'kpi-click'], onclick: o.onclick, tabindex: o.onclick ? 0 : null, role: o.onclick ? 'link' : null, onkeydown: o.onclick ? (e) => { if (e.key === 'Enter') o.onclick(e); } : null },
       h('div.kpi-top', o.icon && h('span.kpi-icon', icon(o.icon, 16)), h('span.kpi-label', o.label)), valEl,
       (o.delta !== undefined || o.hint) && h('div.kpi-foot', o.delta !== undefined && h('span', { class: ['delta', o.delta >= 0 ? 'up' : 'down', o.deltaGood === false && 'bad'] }, icon(o.delta >= 0 ? 'arrow-up-right' : 'arrow-down-right', 13), fmt.pct(Math.abs(o.delta), 1)), o.hint && h('span.kpi-hint', o.hint)),

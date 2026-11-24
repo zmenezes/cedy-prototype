@@ -3,6 +3,8 @@
 
 /* ritmo vertical dentro dos cartões: sem campos empilhados sem espaço */
 .sh-page .card-body { display: flex; flex-direction: column; gap: var(--s-4); }
+.layer-body > h4 + .tbl-wrap, .layer-body > div > h4 + .tbl-wrap { margin-top: var(--s-2); }
+.layer-body h4 { margin-bottom: var(--s-2); }
 .sh-page input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
 .sh-page .card-body > .field ~ .field { margin-top: 0; }
 .sh-page .card-body > .row, .sh-page .card-body > .btn { align-self: flex-start; }

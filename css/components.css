@@ -90,7 +90,7 @@
 .kpi-foot { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--ink-3); flex-wrap: wrap; }
 .kpi-spark { position: absolute; right: var(--s-4); bottom: var(--s-4); opacity: 0.9; } .kpi-spark svg { width: 84px; height: 26px; }
 .delta { display: inline-flex; align-items: center; gap: 2px; font-weight: 650; color: var(--green-ink); } .delta.down { color: var(--red-ink); } .delta.down.bad, .delta.up.bad { color: var(--red-ink); }
-@media (max-width: 860px) { .kpi-value { font-size: var(--fs-2xl); } .kpi { padding: var(--s-3) var(--s-4); } .kpi-spark { display: none; } }
+@media (max-width: 860px) { .kpi-value { font-size: var(--fs-xl); } .kpi-value[data-long] { font-size: clamp(0.95rem, 9.5cqi, var(--fs-xl)); } .kpi { padding: var(--s-3) var(--s-4); min-width: 0; } .kpi-spark { display: none; } }
 
 .empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: var(--s-10) var(--s-6); }
 .empty-art { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 18px; background: var(--blue-tint); color: var(--blue-ink); margin-bottom: 4px; }
@@ -110,7 +110,9 @@
 
 .progress { height: 8px; border-radius: 8px; background: var(--surface-3); overflow: hidden; } .progress i { display: block; height: 100%; border-radius: 8px; background: var(--blue); transition: width 600ms var(--ease-out); }
 .progress-green i { background: var(--green); } .progress-amber i { background: var(--amber); } .progress-red i { background: var(--red); } .progress-thin { height: 5px; }
-.kv { display: grid; gap: 0; } .kv-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-4); padding: 9px 0; border-bottom: 1px dashed var(--line); } .kv-row:last-child { border-bottom: 0; }
+.kv { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; } .kv-row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-4); padding: 9px 0; border-bottom: 1px dashed var(--line); } .kv-row:last-child { border-bottom: 0; }
+.kv dd .badge, .kv dd .chip, .kv dd .countdown { max-width: 100%; white-space: normal; text-align: left; }
+.kv dd { flex: 0 1 auto; }
 .kv dt { color: var(--ink-3); font-size: var(--fs-sm); flex: none; } .kv dd { text-align: right; font-weight: 550; min-width: 0; overflow-wrap: anywhere; } .kv dd small { display: block; color: var(--ink-3); font-weight: 400; }
 .kv-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s-8); } @media (max-width: 760px) { .kv-cols-2 { grid-template-columns: 1fr; } }
 .money-strong { font-weight: 700; } .money-green { color: var(--green-ink); } .money-red { color: var(--red-ink); }

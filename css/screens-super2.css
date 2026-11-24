@@ -1,5 +1,8 @@
 /* Cedy Superadmin dados (super2.js): qualidade, catálogo, backups, LGPD. Prefixo sdt-. */
 .sdt-page { gap: var(--s-4); }
+.sdt-page > div:not(.page-head) { display: flex; flex-direction: column; gap: var(--s-4); }
+.sdt-page > div:empty { display: none; }
+.sdt-page .card-body { display: flex; flex-direction: column; gap: var(--s-3); }
 .sdt-badges { align-items: center; flex-wrap: wrap; }
 .sdt-h { font-size: var(--fs-lg); margin: var(--s-4) 0 var(--s-2); }
 .sdt-pre { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s-3); overflow: auto; font-size: var(--fs-sm); max-height: 260px; white-space: pre-wrap; word-break: break-word; }

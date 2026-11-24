@@ -36,7 +36,7 @@
 .fin-card-nums > div { min-width: 0; flex: 0 1 auto; }
 .fin-num { font-size: var(--fs-xl); font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .fin-card-nums small { color: var(--ink-3); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fin-ratings { display: inline-flex; gap: 4px; margin-left: 6px; vertical-align: middle; }
+.fin-ratings { display: inline-flex; flex-wrap: wrap; max-width: 100%; gap: 4px; margin-left: 6px; vertical-align: middle; }
 
 .fin-bid { display: flex; flex-direction: column; gap: var(--s-3); }
 .fin-bid.shake, .fin-shake { animation: finshake 320ms var(--ease-out); }
