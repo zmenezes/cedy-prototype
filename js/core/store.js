@@ -16,7 +16,7 @@
 
   const COLLECTIONS = ['orgs', 'users', 'titulos', 'operacoes', 'lances', 'contratos', 'extrato', 'repasses', 'faturas', 'premiacoes',
     'kyc', 'convites', 'agentes', 'propostas', 'produtos', 'notifs', 'lotes', 'contestacoes', 'casosMesa', 'subparceiros', 'aprovacoes', 'incidentes', 'servicos', 'backups', 'titulares', 'eventosSeg', 'usoIA', 'modelosIA', 'integracoes',
-    'conversas', 'mensagens', 'notasCedy', 'alertasContato', 'denuncias', 'bloqueiosCom', 'acoesChamado', 'comunicados', 'ciencias', 'respostasIA', 'acessosCom'];
+    'conversas', 'mensagens', 'notasCedy', 'alertasContato', 'denuncias', 'bloqueiosCom', 'acoesChamado', 'comunicados', 'ciencias', 'respostasIA', 'acessosCom', 'recomendacoes'];
 
   let S = null;           // estado
   const subs = new Map(); // tópico -> Set(fn)

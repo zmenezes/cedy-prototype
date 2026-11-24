@@ -116,6 +116,7 @@
     ag('ag-conciliacao', 'Agente de Conciliação', 'Sugere rateio e prioridade de operações vencidas para casos parciais e empates. A Mesa aprova.', 'assistido', 'assistido', 'R3', { execucoes30d: 27, aceitas: 0.85, correcoes: 0.11, tempoMedio: '6 s' });
     ag('ag-cobranca', 'Agente de Cobrança e Régua', 'Lembretes a sacados e cedentes antes e depois do vencimento. Não altera valores.', 'autonomo', 'autonomo', 'R1', { execucoes30d: 342, aceitas: 0.99, correcoes: 0.0, tempoMedio: '1 s' });
     ag('ag-atendimento', 'Agente de atendimento', 'Triagem e rascunho de resposta para a Mesa e resposta informativa com fonte nos chamados. Só chega a autônomo na categoria informativa; nunca age sobre dinheiro, acesso ou cadastro.', 'autonomo', 'autonomo', 'R0', { execucoes30d: 238, aceitas: 0.96, correcoes: 0.04, tempoMedio: '2 s', obs: 'Autônomo só na categoria "informativa com fonte", depois de 200 respostas revisadas, 95% sem edição e nenhum incidente.' });
+    ag('ag-calibracao', 'Agente de calibração', 'Mede SLA, fila, custo e outros indicadores e recomenda mudança de parâmetro, abrindo a solicitação já preenchida para o Superadmin. Nunca altera parâmetro: só pessoas aprovam. Não atua em segurança nem em retenção e residência de dados.', 'assistido', 'assistido', 'R2', { execucoes30d: 0, aceitas: 0, correcoes: 0, tempoMedio: '4 s', obs: 'Ciclo semanal. Parâmetros econômicos (R3) exigem dois Superadmins.' });
     return S;
   }
 

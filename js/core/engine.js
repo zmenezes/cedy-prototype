@@ -698,13 +698,15 @@
     premiacao_pagar: { label: 'Pagamento de premiação', classe: 'R3' },
     fatura_isentar: { label: 'Isenção de fatura', classe: 'R2' },
     comunicado: { label: 'Comunicado contratual', classe: 'R3' },
+    calibracao: { label: 'Calibração de parâmetro (agente)', classe: 'R2', exigeMotivo: true },
+    calibracao_economica: { label: 'Calibração econômica (agente)', classe: 'R3', exigeMotivo: true, dupla: true },
   };
   /** Quem não é Superadmin pede; outro Superadmin aprova. payload define o efeito; antes/depois são só para exibir. */
   E.solicitarAprovacao = function ({ tipo, titulo, resumo, payload, antes, depois, userId, motivo }) {
     const t = E.APROVACAO_TIPOS[tipo]; if (!t) return fail('Tipo de solicitação desconhecido.');
     if (!motivo || String(motivo).trim().length < 10) return fail('Explique o motivo (mínimo de 10 caracteres).');
     const a = db.put('aprovacoes', { id: 'AP-' + String(db.all('aprovacoes').length + 1).padStart(4, '0'), tipo, classe: t.classe, titulo, resumo, payload, antes: antes || null, depois: depois || null, solicitanteId: userId, solicitadoEm: now(), expiraEm: cal.addUteis(now(), 5), status: 'pendente', motivo });
-    ledger.append({ actor: A.user(userId), acao: 'aprovacao.solicitada', entidade: { kind: 'aprovacao', id: a.id }, resumo: `Solicitação ${a.id}: ${titulo}`, classe: t.classe, detalhe: { motivo } });
+    ledger.append({ actor: db.get('users', userId) ? A.user(userId) : A.agente(userId), acao: 'aprovacao.solicitada', entidade: { kind: 'aprovacao', id: a.id }, resumo: `Solicitação ${a.id}: ${titulo}`, classe: t.classe, detalhe: { motivo } });
     notify.send({ to: { role: 'ops' }, tipo: 'info', titulo: 'Nova solicitação para aprovação: ' + titulo, corpo: resumo || '', link: '/super/aprovacoes' });
     return ok({ aprovacao: a });
   };
@@ -715,18 +717,34 @@
     premiacao_pagar: (p) => (p.ids || []).forEach((id) => db.patch('premiacoes', id, { status: 'pago', pagoEm: now() })),
     fatura_isentar: (p) => db.patch('faturas', p.faturaId, { status: 'isenta', isentaMotivo: p.motivo || null, isentaEm: now() }),
     comunicado: (p) => { if (E.com && E.com.comunicado) E.com.comunicado._publicarAprovado(p.comunicadoId); },
+    calibracao: (p, ctx) => E.ia.cal.aplicar(p, ctx),
+    calibracao_economica: (p, ctx) => E.ia.cal.aplicar(p, ctx),
   };
+  /** Decide uma solicitação. Tipos com dupla (econômicos) exigem duas aprovações de Superadmins distintos; tipos com exigeMotivo pedem justificativa de 10 caracteres. */
   E.decidirAprovacao = function (id, decisao, userId, motivo) {
     const a = db.get('aprovacoes', id); if (!a) return fail('Solicitação não encontrada.');
     if (a.status !== 'pendente') return fail('Solicitação já decidida.');
     if (a.solicitanteId === userId) return fail('Dois olhos: quem solicitou não pode aprovar a própria solicitação.', 'MESMA_PESSOA');
     const u = db.get('users', userId); if (!u || u.perfil !== 'superadmin') return fail('Só o Superadmin decide solicitações.', 'SEM_PERMISSAO');
-    if (decisao === 'rejeitar' && (!motivo || motivo.trim().length < 5)) return fail('Informe o motivo da rejeição.');
+    const t = E.APROVACAO_TIPOS[a.tipo] || {}; const minMot = t.exigeMotivo ? 10 : 5;
+    if ((decisao === 'rejeitar' || t.exigeMotivo) && (!motivo || motivo.trim().length < minMot)) return fail(decisao === 'rejeitar' ? `Informe o motivo da rejeição (mínimo de ${minMot} caracteres).` : 'Explique a decisão (mínimo de 10 caracteres).');
+    const ja = a.assinaturas || [];
+    if (decisao === 'aprovar' && t.dupla) {
+      if (ja.some((x) => x.userId === userId)) return fail('Esta mudança exige dois Superadmins diferentes: você já assinou.', 'MESMA_PESSOA');
+      if (!ja.length) {
+        db.patch('aprovacoes', id, { assinaturas: [{ userId, ts: now(), motivo: motivo || null }] });
+        ledger.append({ actor: A.user(userId), acao: 'aprovacao.primeira_assinatura', entidade: { kind: 'aprovacao', id }, resumo: `Primeira assinatura de ${u.nome} na solicitação ${id}: ${a.titulo}${motivo ? ' (' + motivo + ')' : ''}`, classe: a.classe });
+        db.where('users', (x) => x.perfil === 'superadmin' && x.id !== userId).forEach((x) => notify.send({ to: { userId: x.id }, tipo: 'info', titulo: 'Falta a segunda assinatura: ' + a.titulo, corpo: `${u.nome} aprovou. Esta mudança precisa de dois Superadmins.`, link: '/super/aprovacoes' }));
+        return ok({ parcial: true });
+      }
+    }
     db.batch(() => {
-      if (decisao === 'aprovar') E.aplicadoresAprovacao[a.tipo](a.payload);
-      db.patch('aprovacoes', id, { status: decisao === 'aprovar' ? 'aprovada' : 'rejeitada', decididoPor: userId, decididoEm: now(), motivoDecisao: motivo || null });
+      if (decisao === 'aprovar') E.aplicadoresAprovacao[a.tipo](a.payload, { userId, aprovacao: a });
+      const assinaturas = decisao === 'aprovar' && t.dupla ? [...ja, { userId, ts: now(), motivo: motivo || null }] : ja;
+      db.patch('aprovacoes', id, { status: decisao === 'aprovar' ? 'aprovada' : 'rejeitada', decididoPor: userId, decididoEm: now(), motivoDecisao: motivo || null, assinaturas });
       ledger.append({ actor: A.user(userId), acao: decisao === 'aprovar' ? 'aprovacao.aprovada' : 'aprovacao.rejeitada', entidade: { kind: 'aprovacao', id }, resumo: `${decisao === 'aprovar' ? 'Aprovada' : 'Rejeitada'} a solicitação ${id}: ${a.titulo}${motivo ? ' (' + motivo + ')' : ''}`, classe: a.classe, snapshot: { antes: a.antes, depois: a.depois } });
-      notify.send({ to: { userId: a.solicitanteId }, tipo: decisao === 'aprovar' ? 'sucesso' : 'alerta', titulo: `Solicitação ${decisao === 'aprovar' ? 'aprovada' : 'rejeitada'}: ${a.titulo}`, corpo: motivo || '', link: '/ops/solicitacoes' });
+      if (db.get('users', a.solicitanteId)) notify.send({ to: { userId: a.solicitanteId }, tipo: decisao === 'aprovar' ? 'sucesso' : 'alerta', titulo: `Solicitação ${decisao === 'aprovar' ? 'aprovada' : 'rejeitada'}: ${a.titulo}`, corpo: motivo || '', link: '/ops/solicitacoes' });
+      if (a.tipo.indexOf('calibracao') === 0 && E.ia.cal) E.ia.cal.aposDecisao(a, decisao, motivo);
     });
     return ok();
   };

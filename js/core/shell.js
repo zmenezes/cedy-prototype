@@ -187,6 +187,7 @@
   const comBadge = () => { const E = C.engine; return E.com ? db.where('alertasContato', (a) => ['aberto', 'em_analise'].includes(a.status)).length + db.where('denuncias', (d) => ['pendente', 'em_analise'].includes(d.status)).length : 0; };
   NAV.ops[1].items.push({ id: 'comunicacao', label: 'Comunicação', icon: 'megaphone', path: '/ops/comunicacao', badge: comBadge });
   NAV.superadmin[3].items.splice(3, 0, { id: 'comunicacao', label: 'Saúde da comunicação', icon: 'messages-square', path: '/super/comunicacao' });
+  NAV.superadmin[3].items.splice(4, 0, { id: 'calibracao', label: 'Calibração', icon: 'sliders-horizontal', path: '/super/calibracao', badge: () => (C.engine.ia && C.engine.ia.cal ? db.where('recomendacoes', (r) => r.status === 'pedido').length : 0) });
   C.NAV = NAV;
   const flat = (role) => (NAV[role] || []).flatMap((g) => g.items);
 

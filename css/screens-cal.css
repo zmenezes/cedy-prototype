@@ -1,0 +1,10 @@
+/* Agente de calibração (prefixo cal-). Violeta só para IA. */
+.cal-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-3); }
+.cal-ev { margin: 0; padding-left: 18px; list-style: disc; display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
+.cal-prot { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
+.cal-prot-i { display: flex; gap: var(--s-3); align-items: flex-start; padding: var(--s-3); border: 1px solid var(--line); border-radius: var(--r-md); color: var(--ink-2); }
+.cal-prot-i svg { flex: none; margin-top: 2px; }
+.cal-prot-i small { display: block; color: var(--ink-3); }
+.cal-page .card-body { display: flex; flex-direction: column; gap: var(--s-3); }
+@media (max-width: 1100px) { .cal-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .cal-kpis, .cal-prot { grid-template-columns: minmax(0, 1fr); } }

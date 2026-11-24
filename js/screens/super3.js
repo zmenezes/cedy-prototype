@@ -16,7 +16,7 @@
   /* ------------------------------ helpers ------------------------------ */
   const internos = () => db.where('users', (u) => u.orgId === 'org-cedy').sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
   const supers = () => internos().filter((u) => u.perfil === 'superadmin' && statusUser(u) === 'ativo');
-  const nomeUser = (id) => { const u = db.get('users', id); return u ? u.nome : (id || '—'); };
+  const nomeUser = (id) => { const u = db.get('users', id); const ag = !u && db.get('agentes', id); return u ? u.nome : ag ? ag.nome : (id || '—'); };
   const orgCurta = (id) => { const o = db.get('orgs', id); return o ? (o.fantasia || o.nome) : (id || '—'); };
   const papelLabel = (u) => (u.perfil === 'superadmin' ? 'Superadmin' : (C.OPS_PAPEIS[u.papel] || {}).label || u.papel || '—');
   const perfilLabel = (p) => ({ superadmin: 'Superadmin', admin: 'Admin (líder)', operador: 'Operador', leitor: 'Leitor' }[p] || p || '—');
@@ -754,6 +754,12 @@
         h('p.small.muted', c.corpo),
         ui.kv([['Tipo', (MC ? MC.TIPOS[c.tipo] : c.tipo)], ['Segmento', MC ? MC.descSegmento(c.segmento) : '—'], ['Vigência', c.vigenciaEm ? fmt.date(c.vigenciaEm) : '—'], ['Empresas alcançadas', String(n)], ['Mostra como faixa', c.faixa ? 'Sim' : 'Não']]));
     }
+    if (a.tipo === 'calibracao' || a.tipo === 'calibracao_economica') {
+      return h('div.stack.tight', diffKv(a.antes, a.depois),
+        h('p.small', h('strong', 'Evidência (' + (p.periodo || '') + ', amostra de ' + (p.amostra || '—') + '): '), (p.evidencia || []).join('; ')),
+        h('p.small', h('strong', 'Efeito esperado: '), p.efeito || '—'),
+        a.tipo === 'calibracao_economica' ? h('p.small.muted', 'Econômico: precisa da assinatura de dois Superadmins. Vale a partir de uma data futura, depois do aviso aos afetados, e pode ser revertido.') : null);
+    }
     return diffKv(a.antes, a.depois);
   }
 
@@ -765,6 +771,7 @@
     if (a.tipo === 'premiacao_pagar') return fmt.plural((p.ids || []).length, 'premiação marcada como paga', 'premiações marcadas como pagas') + '.';
     if (a.tipo === 'fatura_isentar') return 'Fatura marcada como isenta.';
     if (a.tipo === 'comunicado') return 'Comunicado publicado para as empresas do segmento, com ciência por empresa.';
+    if (a.tipo === 'calibracao' || a.tipo === 'calibracao_economica') return 'Parâmetro calibrado, com vigência a partir do próximo dia útil (ou de uma data futura, nos econômicos).';
     return 'Efeito aplicado.';
   }
 
@@ -827,14 +834,16 @@
   }
 
   function aprovCard(a) {
-    const eu = meId();
+    const eu = meId(); const t = E.APROVACAO_TIPOS[a.tipo] || {};
+    const ass = a.assinaturas || []; const jaAssinei = ass.some((x) => x.userId === eu);
     const souSolicitante = a.solicitanteId === eu;
     const decidida = a.status === 'aprovada' || a.status === 'rejeitada';
+    const trava = souSolicitante || jaAssinei;
     const foot = a.status === 'pendente'
-      ? h('div.sgv-aprfoot', h('div.small.muted', 'Solicitada por ', h('strong', nomeUser(a.solicitanteId)), ' · ', fmt.rel(a.solicitadoEm)),
+      ? h('div.sgv-aprfoot', h('div.small.muted', 'Solicitada por ', h('strong', nomeUser(a.solicitanteId)), ' · ', fmt.rel(a.solicitadoEm), t.dupla ? ' · assinaturas: ' + ass.length + ' de 2' + (ass.length ? ' (' + ass.map((x) => nomeUser(x.userId)).join(', ') + ')' : '') : ''),
         h('div.row.nowrap', ui.btn('Rejeitar', { size: 'sm', variant: 'ghost', disabled: souSolicitante, title: souSolicitante ? 'Dois olhos: outra pessoa precisa decidir' : 'Recusar com motivo', onclick: () => rejeitarFlow(a) }),
-          ui.btn('Aprovar', { size: 'sm', variant: 'primary', icon: 'check', disabled: souSolicitante, title: souSolicitante ? 'Dois olhos: outra pessoa precisa aprovar' : 'Aplicar o efeito e registrar na trilha', onclick: () => aprovarFlow(a) })),
-          souSolicitante ? h('p.small.sgv-dois', 'Dois olhos: quem solicitou não pode decidir. Outra pessoa Superadmin precisa aprovar.') : null)
+          ui.btn(t.dupla && !ass.length ? 'Assinar (1 de 2)' : t.dupla ? 'Assinar e aplicar (2 de 2)' : 'Aprovar', { size: 'sm', variant: 'primary', icon: 'check', disabled: trava, title: souSolicitante ? 'Dois olhos: outra pessoa precisa aprovar' : jaAssinei ? 'Você já assinou: falta outro Superadmin' : 'Aplicar o efeito e registrar na trilha', onclick: () => aprovarFlow(a) })),
+          souSolicitante ? h('p.small.sgv-dois', 'Dois olhos: quem solicitou não pode decidir. Outra pessoa Superadmin precisa aprovar.') : jaAssinei ? h('p.small.sgv-dois', 'Você já assinou. Falta a assinatura de outro Superadmin.') : null)
       : h('div.sgv-aprfoot', ui.badge(a.status === 'aprovada' ? 'Aprovada' : a.status === 'rejeitada' ? 'Rejeitada' : 'Expirada', a.status === 'aprovada' ? 'green' : a.status === 'rejeitada' ? 'red' : 'neutral', { dot: true }),
         h('div.small.muted', decidida ? `Por ${nomeUser(a.decididoPor)} em ${fmt.datetime(a.decididoEm)}${a.motivoDecisao ? ': ' + a.motivoDecisao : ''}` : `Expirou em ${fmt.datetime(a.expiraEm)} sem decisão`));
     return ui.card({ class: 'sgv-apr' },
@@ -849,9 +858,17 @@
   }
 
   async function aprovarFlow(a) {
-    if (!(await ui.confirm({ title: 'Aprovar ' + a.id + '?', text: textoAplicado(a) + ' O efeito entra na hora e a decisão grava ' + a.classe + ' na trilha com o seu nome.', confirmLabel: 'Aprovar e aplicar' }))) return;
-    const r = E.decidirAprovacao(a.id, 'aprovar', meId());
+    const t = E.APROVACAO_TIPOS[a.tipo] || {}; let motivo = null;
+    if (t.exigeMotivo) {
+      const fMot = ui.input({ type: 'textarea', rows: 3, placeholder: 'Ex.: a evidência é suficiente e o efeito é pequeno' });
+      const wMot = ui.field({ label: 'Motivo da decisão', required: true, hint: 'Mínimo de 10 caracteres. Fica na trilha e alimenta a avaliação do agente.' }, fMot);
+      const m = ui.modal({ title: (t.dupla ? 'Assinar ' : 'Aprovar ') + a.id, icon: 'stamp', size: 'md', body: h('div.stack.tight', ui.callout({ tone: 'info', text: textoAplicado(a) + (t.dupla ? ' Exige duas assinaturas de Superadmins diferentes.' : '') }), wMot),
+        footer: (api) => [ui.btn('Voltar', { variant: 'ghost', onclick: () => api.close(false) }), ui.btn(t.dupla ? 'Assinar' : 'Aprovar e aplicar', { variant: 'primary', onclick: () => { const v = fMot.value.trim(); wMot.setError(v.length < 10 ? 'Escreva ao menos 10 caracteres.' : ''); if (v.length < 10) return; api.close(v); } })] });
+      motivo = await m.promise; if (!motivo) return;
+    } else if (!(await ui.confirm({ title: 'Aprovar ' + a.id + '?', text: textoAplicado(a) + ' O efeito entra na hora e a decisão grava ' + a.classe + ' na trilha com o seu nome.', confirmLabel: 'Aprovar e aplicar' }))) return;
+    const r = E.decidirAprovacao(a.id, 'aprovar', meId(), motivo);
     if (!r.ok) { ui.toast('Não foi possível aprovar', { type: 'error', text: r.erro }); return; }
+    if (r.parcial) { ui.toast('Primeira assinatura registrada', { type: 'success', text: 'Falta a assinatura de outro Superadmin para aplicar.' }); return; }
     ui.toast('Solicitação aprovada', { type: 'success', text: textoAplicado(a) });
   }
   async function rejeitarFlow(a) {
@@ -859,9 +876,9 @@
     const wMot = ui.field({ label: 'Motivo da rejeição', required: true, hint: 'O solicitante recebe este motivo.' }, fMot);
     const m = ui.modal({ title: 'Rejeitar ' + a.id, icon: 'stamp', size: 'sm', body: wMot,
       footer: (api) => [ui.btn('Voltar', { variant: 'ghost', onclick: () => api.close(false) }), ui.btn('Rejeitar', { variant: 'danger', onclick: () => {
-        const mot = fMot.value.trim();
-        wMot.setError(mot.length < 5 ? 'Informe o motivo da rejeição.' : '');
-        if (mot.length < 5) return;
+        const mot = fMot.value.trim(); const minMot = (E.APROVACAO_TIPOS[a.tipo] || {}).exigeMotivo ? 10 : 5;
+        wMot.setError(mot.length < minMot ? `Informe o motivo da rejeição (mínimo de ${minMot} caracteres).` : '');
+        if (mot.length < minMot) return;
         const r = E.decidirAprovacao(a.id, 'rejeitar', meId(), mot);
         if (!r.ok) { ui.toast('Não foi possível rejeitar', { type: 'error', text: r.erro }); return; }
         ui.toast('Solicitação rejeitada', { type: 'warn', text: 'O solicitante recebe o motivo.' });
