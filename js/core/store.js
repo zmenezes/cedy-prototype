@@ -12,7 +12,7 @@
 (function () {
   const C = window.Cedy;
   const KEY = 'cedy-proto-0.1';
-  const VERSION = 9;
+  const VERSION = 10;
 
   const COLLECTIONS = ['orgs', 'users', 'titulos', 'operacoes', 'lances', 'contratos', 'extrato', 'repasses', 'faturas', 'premiacoes',
     'kyc', 'convites', 'agentes', 'propostas', 'produtos', 'notifs', 'lotes', 'contestacoes', 'casosMesa', 'subparceiros', 'aprovacoes', 'incidentes', 'servicos', 'backups', 'titulares', 'eventosSeg', 'usoIA', 'modelosIA', 'integracoes',
