@@ -26,14 +26,14 @@
   /** Papéis internos da Cedy (user.papel quando a empresa é a Cedy). Perfil admin da Mesa = líder: todas as permissões operacionais, nunca as de plataforma. */
   C.OPS_PAPEIS = {
     super: { label: 'Superadmin', perms: ['*'], desc: 'Configura a plataforma, aprova alterações críticas e acessa dados e saúde.' },
-    mesa: { label: 'Analista da Mesa de Operações', perms: ['ops.lote', 'ops.agentes', 'ops.config.solicitar'], desc: 'Valida lotes de títulos e decide propostas dos agentes.' },
-    conciliadora: { label: 'Analista da Mesa Conciliadora', perms: ['ops.conciliar', 'ops.config.solicitar'], desc: 'Resolve parciais, empates e créditos sem fonte.' },
-    compliance: { label: 'Compliance e risco', perms: ['ops.kyc', 'ops.suspender', 'ops.agentes', 'ops.config.solicitar'], desc: 'Aprova cadastros, suspende empresas e acompanha alertas.' },
-    financeiro: { label: 'Financeiro', perms: ['ops.faturar', 'ops.config.solicitar'], desc: 'Fechamento mensal, faturas de TS e premiações.' },
-    suporte: { label: 'Suporte', perms: ['ops.suporte', 'ops.verComo'], desc: 'Atende clientes e entra em modo "ver como", só leitura e auditado.' },
+    mesa: { label: 'Analista da Mesa de Operações', perms: ['ops.lote', 'ops.agentes', 'ops.config.solicitar', 'ops.com.atender'], desc: 'Valida lotes de títulos, decide propostas dos agentes e atende chamados de operações.' },
+    conciliadora: { label: 'Analista da Mesa Conciliadora', perms: ['ops.conciliar', 'ops.config.solicitar', 'ops.com.atender'], desc: 'Resolve parciais, empates e créditos sem fonte e atende chamados de conciliação.' },
+    compliance: { label: 'Compliance e risco', perms: ['ops.kyc', 'ops.suspender', 'ops.agentes', 'ops.config.solicitar', 'ops.com.atender', 'ops.com.moderar', 'ops.com.ler_pares'], desc: 'Aprova cadastros, suspende empresas, acompanha alertas e modera conversas.' },
+    financeiro: { label: 'Financeiro', perms: ['ops.faturar', 'ops.config.solicitar', 'ops.com.atender'], desc: 'Fechamento mensal, faturas de TS e premiações; atende chamados de faturamento.' },
+    suporte: { label: 'Suporte', perms: ['ops.suporte', 'ops.verComo', 'ops.com.atender', 'ops.com.ler_pares'], desc: 'Atende clientes e chamados, entra em modo "ver como" (só leitura, auditado) e lê conversas com motivo.' },
     auditor: { label: 'Auditor', perms: [], desc: 'Leitura da trilha e dos cadastros, sem ações.' },
   };
-  C.OPS_PERMS = { 'ops.lote': 'Validar lotes', 'ops.conciliar': 'Resolver casos de conciliação', 'ops.kyc': 'Aprovar cadastros (KYC)', 'ops.suspender': 'Suspender e reativar empresas', 'ops.agentes': 'Decidir propostas dos agentes', 'ops.faturar': 'Fechamento, faturas e premiações', 'ops.config.solicitar': 'Solicitar alteração de configuração', 'ops.verComo': 'Entrar em "ver como" (auditado)', 'ops.suporte': 'Atender clientes', 'ops.config.aplicar': 'Aplicar configuração, programas e autonomia (Superadmin)' };
+  C.OPS_PERMS = { 'ops.lote': 'Validar lotes', 'ops.conciliar': 'Resolver casos de conciliação', 'ops.kyc': 'Aprovar cadastros (KYC)', 'ops.suspender': 'Suspender e reativar empresas', 'ops.agentes': 'Decidir propostas dos agentes', 'ops.faturar': 'Fechamento, faturas e premiações', 'ops.config.solicitar': 'Solicitar alteração de configuração', 'ops.verComo': 'Entrar em "ver como" (auditado)', 'ops.suporte': 'Atender clientes', 'ops.config.aplicar': 'Aplicar configuração, programas e autonomia (Superadmin)', 'ops.com.atender': 'Atender chamados e conversas da sua fila', 'ops.com.moderar': 'Moderar: alertas de contato, denúncias e redação', 'ops.com.comunicar': 'Emitir comunicados informativos', 'ops.com.ler_pares': 'Ler conversas entre clientes, com motivo' };
   /** Perfil dentro da organização: admin | operador | leitor */
   const PERMS = { admin: ['ver', 'operar', 'aceitar', 'lance', 'publicar', 'assinar', 'pagar', 'importar', 'admin'], operador: ['ver', 'operar', 'aceitar', 'lance', 'publicar', 'assinar', 'pagar', 'importar'], leitor: ['ver'] };
   PERMS.subparceiro = ['ver', 'convidar'];
@@ -177,6 +177,16 @@
   NAV.ops[1].items.push({ id: 'solicitacoes', label: 'Minhas solicitações', icon: 'stamp', path: '/ops/solicitacoes', badge: () => db.where('aprovacoes', (a) => a.status === 'pendente' && a.solicitanteId === (session.get() || {}).userId).length });
   // Originador: subparceiros
   NAV.originador[0].items.splice(2, 0, { id: 'subparceiros', label: 'Subparceiros', icon: 'network', path: '/originador/subparceiros' });
+  // Central de comunicação: Mensagens para todos; Chamados para a Mesa e o Superadmin
+  const msgBadge = () => { const s = session.get(); const E = C.engine; if (!s || !E.com) return 0; const c = E.com.contadores(s.userId); return c.por.conversas + c.por.chamados; };
+  ['cedente', 'financiador', 'originador', 'sacado'].forEach((r) => NAV[r][0].items.push({ id: 'mensagens', label: 'Mensagens', icon: 'messages-square', path: '/' + r + '/mensagens', badge: msgBadge }));
+  NAV.subparceiro[0].items.push({ id: 'mensagens', label: 'Mensagens', icon: 'messages-square', path: '/originador/mensagens', badge: msgBadge });
+  const chamBadge = () => { const s = session.get(); const E = C.engine; if (!s || !E.com) return 0; return E.com.feed(s.userId).filter((i) => i.tipo === 'chamados' && i.precisa).length; };
+  NAV.ops[0].items.push({ id: 'chamados', label: 'Chamados', icon: 'life-buoy', path: '/ops/chamados', badge: chamBadge }, { id: 'mensagens', label: 'Mensagens', icon: 'messages-square', path: '/ops/mensagens', badge: msgBadge });
+  NAV.superadmin[0].items.push({ id: 'chamados', label: 'Chamados', icon: 'life-buoy', path: '/ops/chamados', badge: chamBadge }, { id: 'mensagens', label: 'Mensagens', icon: 'messages-square', path: '/ops/mensagens', badge: msgBadge });
+  const comBadge = () => { const E = C.engine; return E.com ? db.where('alertasContato', (a) => ['aberto', 'em_analise'].includes(a.status)).length + db.where('denuncias', (d) => ['pendente', 'em_analise'].includes(d.status)).length : 0; };
+  NAV.ops[1].items.push({ id: 'comunicacao', label: 'Comunicação', icon: 'megaphone', path: '/ops/comunicacao', badge: comBadge });
+  NAV.superadmin[3].items.splice(3, 0, { id: 'comunicacao', label: 'Saúde da comunicação', icon: 'messages-square', path: '/super/comunicacao' });
   C.NAV = NAV;
   const flat = (role) => (NAV[role] || []).flatMap((g) => g.items);
 
@@ -226,7 +236,7 @@
 
   /** Faixas de aviso globais: modo "ver como" (auditado, só leitura) e mercado pausado/manutenção */
   function buildBanners() {
-    return ui.live(['session', 'config', 'users'], () => {
+    return ui.live(['session', 'config', 'users', 'comunicados', 'ciencias', 'servicos'], () => {
       const out = []; const sess = session.get(); const cfg = db.cfg();
       if (sess && sess.impersonando) {
         const im = sess.impersonando; const u = session.user(); const o = session.org();
@@ -234,6 +244,7 @@
       }
       if (cfg.manutencao && cfg.manutencao.ativo) out.push(h('div.banner.banner-warn', { role: 'status' }, icon('triangle-alert', 16), h('span.banner-t', h('strong', 'Manutenção programada: '), cfg.manutencao.msg || 'a plataforma pode oscilar.'), cfg.manutencao.ate ? h('span.small', 'até ' + fmt.datetime(cfg.manutencao.ate)) : null));
       if (cfg.mercadoPausado) out.push(h('div.banner.banner-warn', { role: 'status' }, icon('octagon-pause', 16), h('span.banner-t', h('strong', 'Mercado pausado pela plataforma: '), 'novas operações e lances estão suspensos. Operações em andamento seguem normalmente.')));
+      if (C.comUI && C.comUI.faixas) C.comUI.faixas().forEach((f) => out.push(f));
       return out;
     }, { class: 'banners' });
   }
@@ -255,7 +266,7 @@
       h('div.sb-top', h('a.sb-logo', { href: '#' + R.home, 'aria-label': 'Cedy, início' }, h('img.logo-full', { src: 'assets/logo/horizontal-dark.svg', alt: 'Cedy', height: 30 }), h('img.logo-sym', { src: 'assets/logo/symbol-dark.svg', alt: 'Cedy', height: 30 })),
         h('button.sb-collapse', { type: 'button', 'aria-label': 'Recolher menu', onclick: () => { prefs.setCollapsed(!prefs.collapsed); shellEl.classList.toggle('is-collapsed', prefs.collapsed); } }, icon('panel-left', 18))),
       ui.live(['session', 'orgs'], () => { const o = session.org(); return h('button.sb-org', { type: 'button', onclick: (e) => userMenu(e.currentTarget), 'aria-label': 'Empresa e perfil' }, ui.avatar(o.fantasia || o.nome, { square: true }), h('span.sb-org-t', h('strong', o.fantasia || o.nome), h('small', (() => { const u = session.user(); if (u.perfil === 'superadmin') return 'Superadmin · plataforma'; if (u.perfil === 'subparceiro') return 'Subparceiro'; if (o.kind === 'cedy' && C.OPS_PAPEIS[u.papel]) return C.OPS_PAPEIS[u.papel].label.replace('Analista da ', '') + (u.perfil === 'admin' ? ' (líder)' : ''); return R.label + ' · ' + u.perfil.charAt(0).toUpperCase() + u.perfil.slice(1); })())), icon('chevrons-up-down', 14)); }),
-      ui.live(['operacoes', 'extrato', 'lotes', 'casosMesa', 'kyc', 'propostas', 'titulos', 'session', 'aprovacoes', 'incidentes', 'titulares'], () => h('nav.sb-nav', NAV[role].map((g) => h('div.sb-group', g.group && h('div.sb-gt', g.group), g.items.map((it) => {
+      ui.live(['operacoes', 'extrato', 'lotes', 'casosMesa', 'kyc', 'propostas', 'titulos', 'session', 'aprovacoes', 'incidentes', 'titulares', 'conversas', 'notifs', 'comunicados', 'ciencias', 'alertasContato'], () => h('nav.sb-nav', NAV[role].map((g) => h('div.sb-group', g.group && h('div.sb-gt', g.group), g.items.map((it) => {
         const n = it.badge ? it.badge() : 0; const act = isActive(it, activePath());
         return h('a', { class: ['sb-item', act && 'is-active'], href: '#' + it.path, 'aria-current': act ? 'page' : null, title: it.label, dataset: { id: it.id } }, icon(it.icon, 19), h('span.sb-lab', it.label), n ? h('span.sb-badge', n > 99 ? '99+' : n) : null);
       }))))),
@@ -265,7 +276,7 @@
   }
   function buildBottom(role) {
     const items = flat(role).filter((i) => i.mobile).sort((a, b) => a.mobile - b.mobile);
-    return ui.live(['operacoes', 'extrato', 'lotes', 'casosMesa', 'kyc', 'titulos', 'session', 'aprovacoes', 'incidentes', 'titulares'], () => [...items.map((it) => { const n = it.badge ? it.badge() : 0; const act = isActive(it, activePath()); return h('a', { class: ['bn-item', act && 'is-active'], href: '#' + it.path, 'aria-current': act ? 'page' : null }, h('span.bn-ic', icon(it.icon, 22), n ? h('i.bn-badge', n > 9 ? '9+' : n) : null), h('span.bn-lab', it.short || it.label.split(' ')[0])); }),
+    return ui.live(['operacoes', 'extrato', 'lotes', 'casosMesa', 'kyc', 'titulos', 'session', 'aprovacoes', 'incidentes', 'titulares', 'conversas', 'notifs'], () => [...items.map((it) => { const n = it.badge ? it.badge() : 0; const act = isActive(it, activePath()); return h('a', { class: ['bn-item', act && 'is-active'], href: '#' + it.path, 'aria-current': act ? 'page' : null }, h('span.bn-ic', icon(it.icon, 22), n ? h('i.bn-badge', n > 9 ? '9+' : n) : null), h('span.bn-lab', it.short || it.label.split(' ')[0])); }),
       h('button.bn-item', { type: 'button', onclick: () => openMore(role) }, h('span.bn-ic', icon('menu', 22)), h('span.bn-lab', 'Mais'))], { class: 'bn-live' });
   }
   function openMore(role) {
@@ -281,7 +292,7 @@
       h('div.tb-spacer'),
       ui.live([], () => h('button.tb-clock', { type: 'button', onclick: openDemo, 'aria-label': 'Painel de demonstração: relógio simulado', title: 'Relógio de simulação' }, icon('clock', 15), h('span.tb-clock-t', clockText()), h('span.tb-sim', 'simulado')), { tag: 'span' }),
       ui.iconBtn('sparkles', { label: 'Assistente Cedy', class: 'tb-ai', onclick: () => C.assistant && C.assistant.open() }),
-      ui.live(['notifs', 'session'], () => { const n = notify.unread(); return ui.iconBtn('bell', { label: 'Notificações' + (n ? `, ${n} não lidas` : ''), badge: n ? (n > 9 ? '9+' : n) : null, onclick: (e) => notifPop(e.currentTarget) }); }, { tag: 'span' }),
+      ui.live(['notifs', 'session', 'conversas', 'comunicados', 'ciencias', 'alertasContato', 'aprovacoes'], () => { const s = session.get(); const n = s && C.engine.com ? C.engine.com.contadores(s.userId).naoLidas : notify.unread(); return ui.iconBtn('bell', { label: 'Mensagens e avisos' + (n ? `, ${n} não lidos` : ''), badge: n ? (n > 9 ? '9+' : n) : null, onclick: (e) => notifPop(e.currentTarget) }); }, { tag: 'span' }),
       ui.live(['session', 'users'], () => { const u = session.user(); return h('button.tb-user', { type: 'button', onclick: (e) => userMenu(e.currentTarget), 'aria-label': 'Menu do usuário ' + u.nome }, ui.avatar(u.nome, { hue: u.hue })); }, { tag: 'span' }),
     ];
   }
@@ -290,11 +301,8 @@
 
   /* ------------------------- notificações / usuário ----------------------- */
   function notifPop(anchor) {
-    const body = ui.live(['notifs'], () => { const list = notify.mine().slice(0, 30);
-      return h('div.notif', h('div.notif-head', h('strong', 'Notificações'), h('span.notif-head-r', ui.link('Ver todas', '/' + session.role() + '/notificacoes', { onclick: () => api.close() }), ui.btn('Marcar todas como lidas', { variant: 'ghost', size: 'sm', onclick: () => notify.readAll() }))),
-        list.length ? h('div.notif-list', list.map((n) => h('button', { type: 'button', class: ['notif-item', !n.lida && 'unread'], onclick: () => { notify.read(n.id); api.close(); if (n.link) C.router.go(n.link); } }, h('span', { class: ['notif-ic', 'tone-' + ({ sucesso: 'green', alerta: 'amber', erro: 'red', info: 'blue' }[n.tipo] || 'blue')] }, icon({ sucesso: 'circle-check', alerta: 'triangle-alert', erro: 'circle-alert', info: 'info' }[n.tipo] || 'info', 16)), h('span.notif-t', h('strong', n.titulo), n.corpo && h('small', n.corpo), h('time', fmt.rel(n.ts)))))) : ui.empty({ icon: 'bell', title: 'Sem notificações', text: 'Quando algo acontecer nas suas operações, avisamos aqui.' }));
-    });
-    const api = ui.popover(anchor, body, { align: 'end', class: 'pop-notif', title: 'Notificações' });
+    let api; const body = C.comUI.bell(() => api && api.close());
+    api = ui.popover(anchor, body, { align: 'end', class: 'pop-notif', title: 'Mensagens e avisos' });
   }
   function userMenu(anchor) {
     const u = session.user(); const o = session.org(); const all = db.all('users').filter((x) => x.id !== u.id);
@@ -332,6 +340,7 @@
         ui.switch({ label: 'Mercado simulado dando lances', hint: 'Outros financiadores cobrem ofertas abertas (dentro das próprias políticas).', checked: prefs.market, onChange: (v) => prefs.setMarket(v) }),
         h('div.sp-3'), ui.switch({ label: 'Mesa de Operações simulada', hint: 'Aprova lotes sem erro ao fim do SLA se ninguém decidir antes.', checked: db.cfg().mesaSimulada, onChange: (v) => db.setCfg({ mesaSimulada: v }) }),
         h('div.sp-3'), h('div.demo-jumps', ui.btn('Forçar lance de mercado', { size: 'sm', icon: 'gavel', onclick: () => C.engine.mercadoTick(true) }), ui.btn('Gerar crédito de sacado', { size: 'sm', icon: 'banknote', onclick: () => demoCredit() }))),
+      C.comUI && C.comUI.demoCard ? C.comUI.demoCard() : null,
       ui.card({ title: 'Dados' }, h('p.muted', 'Restaura as empresas, títulos, operações e a trilha ao estado inicial.'), ui.btn('Restaurar dados de demonstração', { variant: 'danger', icon: 'rotate-ccw', onclick: async () => { if (await ui.confirm({ title: 'Restaurar dados?', text: 'Tudo o que você fez neste navegador será descartado.', tone: 'danger', confirmLabel: 'Restaurar' })) { C.store.reset(C.seed.build); C.router.resetStack(); C.auth.logout(true); } } })));
     ui.drawer({ title: 'Painel de demonstração', icon: 'wand-sparkles', body, size: 'md' });
   }

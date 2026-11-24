@@ -63,13 +63,31 @@
   }
 
   /* ------------------------------ respostas ------------------------------ */
+  /** o assistente é o mesmo agente de atendimento: não prevê nem promete, cita o que consulta e leva a uma pessoa quando precisa (CC-30) */
+  function falarComPessoa() {
+    const u = session.user(); const K = E.com;
+    if (!u || K.isCedy(u)) { ui.toast('Disponível para clientes', { type: 'info', text: 'Quem atende pela Cedy já está com a Mesa.' }); return; }
+    const perguntas = loadHist().filter((x) => x.r === 'user').slice(-3).map((x) => '- ' + x.t).join('\n');
+    const r = K.abrirConversa({ userId: u.id, canal: 'cedy', categoria: 'outros', semAgente: true, texto: 'Pedi ajuda pelo assistente e preciso falar com uma pessoa.\nÚltimas perguntas:\n' + (perguntas || '- (nenhuma)') });
+    if (!r.ok) { ui.toast('Não foi possível abrir o chamado', { type: 'error', text: r.erro }); return; }
+    close(); ui.toast('Chamado aberto', { type: 'success', text: `${r.conv.protocolo}: uma pessoa da Cedy responde. Resumo da conversa já enviado.` }); C.router.go(K.rotaConversa(r.conv, u.id));
+  }
+  const pessoaAct = () => (E.com.isCedy(session.user()) ? [] : [{ label: 'Falar com uma pessoa', icon: 'life-buoy', run: falarComPessoa }]);
   function answer(q) {
-    const me = session.get(); const role = session.role(); const org = session.org();
+    const me = session.get(); const role = session.role(); const org = session.org(); const IA = E.ia.com;
     const ctx = { me, role, org, user: session.user(), key: C.shellKey() };
-    const r = route(q, ctx);
-    if (r) { bubble('b', r.nodes, r.acts); return; }
-    bubble('b', ['Não entendi. Tente uma destas perguntas:'],
-      CHIPS[ctx.key].slice(0, 4).map((c) => ({ label: c, run: () => send(c) })));
+    const deg = IA.degradado();
+    if (deg.sim) { bubble('b', [`O assistente está indisponível agora. ${deg.motivo} Nada se perde: o resto do app segue normal.`], pessoaAct()); return; }
+    if (IA.PREVISAO.test(q)) { bubble('b', ['Não faço previsões nem promessas de prazo ou resultado. Posso mostrar o que consta hoje na sua conta ou chamar uma pessoa da Cedy.'], pessoaAct()); return; }
+    let r = route(q, ctx);
+    if (!r && !E.com.isCedy(ctx.user)) { const x = IA.respostaR0(q, ctx.user.id); if (x.ok && x.tipo === 'informativa_fonte') r = { nodes: [x.texto, h('small.asst-src', icon('link', 11), ' Fonte: ', x.fonte.rotulo, ' · consultado em ', fmt.datetime(x.fonte.ts))], acts: x.fonte.rota ? [{ label: 'Abrir', route: x.fonte.rota }] : [] }; }
+    if (r) {
+      if (!r.nodes.some((n) => n && n.classList && n.classList.contains('asst-src'))) r.nodes = [...r.nodes, h('small.asst-src', icon('link', 11), ' Dados do sistema · consultados em ', fmt.datetime(C.clock.now()))];
+      IA.registrar({ categoria: 'informativa_fonte', modo: 'autonomo', origem: 'assistente', editada: false, revisadaPor: null });
+      bubble('b', r.nodes, [...(r.acts || []), ...pessoaAct()]); return;
+    }
+    bubble('b', ['Não entendi. Tente uma destas perguntas ou fale com uma pessoa:'],
+      [...CHIPS[ctx.key].slice(0, 4).map((c) => ({ label: c, run: () => send(c) })), ...pessoaAct()]);
   }
   function kvActs(pairs, acts) { return { nodes: [ui.kv(pairs)], acts }; }
   function say(text, acts) { return { nodes: [text], acts }; }
@@ -136,7 +154,7 @@
     return { nodes: [items.length ? `Desde 0h da simulação: ${nEv} na trilha${ctx.role === 'ops' ? '' : ' da sua conta'}.` : 'Nada novo na trilha desde 0h da simulação.',
       items.length ? h('ul', { style: 'margin:6px 0 0 16px;list-style:disc' }, items.slice(0, 6).map((t) => h('li.small', t))) : null,
       mine.length ? `Você tem ${fmt.plural(mine.length, 'notificação não lida', 'notificações não lidas')}.` : null].filter(Boolean),
-      acts: mine.length ? [{ label: 'Ver notificações', primary: true, route: '/' + ctx.role + '/notificacoes' }] : [{ label: 'Ir para o início', route: C.homeFor(ctx.me) }] };
+      acts: mine.length ? [{ label: 'Ver mensagens e avisos', primary: true, route: (ctx.role === 'ops' ? '/ops' : '/' + ctx.role) + '/mensagens' }] : [{ label: 'Ir para o início', route: C.homeFor(ctx.me) }] };
   }
   function notifyMine(ctx) { try { return C.store.notify.mine().filter((x) => !x.lida); } catch (e) { return []; } }
   const GLOSS = [

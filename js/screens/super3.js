@@ -744,6 +744,16 @@
       const f = db.get('faturas', p.faturaId);
       return h('div.stack.tight', ui.kv([['Fatura', h('span.mono', p.faturaId)], ['Financiador', f ? orgCurta(f.finId) : '—'], ['Valor', f ? fmt.brl(f.total) : '—'], ['Situação', 'aberta para isenta'], ['Motivo', p.motivo || a.motivo || '—']]));
     }
+    if (a.tipo === 'comunicado') {
+      const c = db.get('comunicados', p.comunicadoId);
+      if (!c) return h('p.small.muted', 'Comunicado não localizado.');
+      const MC = E.com.comunicado;
+      const n = MC ? MC.empresasDoSegmento(c.segmento).length : '—';
+      return h('div.stack.tight',
+        h('p.small', h('strong', c.titulo)),
+        h('p.small.muted', c.corpo),
+        ui.kv([['Tipo', (MC ? MC.TIPOS[c.tipo] : c.tipo)], ['Segmento', MC ? MC.descSegmento(c.segmento) : '—'], ['Vigência', c.vigenciaEm ? fmt.date(c.vigenciaEm) : '—'], ['Empresas alcançadas', String(n)], ['Mostra como faixa', c.faixa ? 'Sim' : 'Não']]));
+    }
     return diffKv(a.antes, a.depois);
   }
 
@@ -754,6 +764,7 @@
     if (a.tipo === 'autonomia') { const ag = db.get('agentes', p.agenteId); return `Nível atualizado: ${ag ? ag.nome : p.agenteId}.`; }
     if (a.tipo === 'premiacao_pagar') return fmt.plural((p.ids || []).length, 'premiação marcada como paga', 'premiações marcadas como pagas') + '.';
     if (a.tipo === 'fatura_isentar') return 'Fatura marcada como isenta.';
+    if (a.tipo === 'comunicado') return 'Comunicado publicado para as empresas do segmento, com ciência por empresa.';
     return 'Efeito aplicado.';
   }
 

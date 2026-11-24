@@ -304,12 +304,13 @@
   function pedirInfoLote(lote) {
     let msg = '';
     const wrap = ui.field({ label: 'O que falta', required: true }, ui.input({ type: 'textarea', placeholder: 'Ex.: anexar comprovante de entrega das NF 48412 e 48413', onInput: (v) => (msg = v) }));
-    Ops.modal({ title: 'Pedir informação ao cedente', icon: 'message-circle', size: 'sm', body: h('div.stack.tight', ui.callout({ tone: 'info', text: 'O lote continua em validação e o SLA segue correndo. O cedente recebe uma notificação.' }), wrap),
+    Ops.modal({ title: 'Pedir informação ao cedente', icon: 'message-circle', size: 'sm', body: h('div.stack.tight', ui.callout({ tone: 'info', text: 'O lote continua em validação e o SLA segue correndo. O pedido vai para a conversa do lote, com registro, e o cedente é avisado.' }), wrap),
       footer: (api) => [ui.btn('Cancelar', { variant: 'ghost', onclick: () => api.close() }), ui.btn('Enviar pedido', { variant: 'primary', onclick: () => {
         if (!msg.trim()) { wrap.setError('Descreva o que o cedente precisa enviar.'); return; }
         ledger.append({ actor: E.actors.user(meId()), acao: 'lote.info_pedida', entidade: { kind: 'lote', id: lote.id }, resumo: `Mesa pediu informação sobre ${lote.id}: ${msg.trim()}`, classe: 'R1' });
-        notify.send({ to: { orgId: lote.cedenteId }, tipo: 'alerta', titulo: `Mesa pediu informação: ${lote.id}`, corpo: msg.trim(), link: '/cedente/titulos' });
-        ui.toast('Pedido enviado ao cedente', { type: 'success' }); api.close();
+        const r = C.comUI.pedirInformacao({ ancora: { kind: 'lote', id: lote.id }, rotulo: 'Lote ' + lote.id, orgId: lote.cedenteId, texto: msg.trim() });
+        if (!r.ok) { wrap.setError(r.erro); return; }
+        ui.toast('Pedido enviado ao cedente', { type: 'success', text: 'Segue na conversa do lote, com registro.', link: r.rota }); api.close();
       } })] });
   }
 
@@ -598,13 +599,14 @@
     let msg = null;
     const campo = ui.field({ label: 'O que falta', required: true }, (msg = ui.input({ type: 'textarea', placeholder: 'Ex.: enviar comprovante do pagador e a nota de origem do TED' })));
     Ops.modal({ title: 'Pedir informação ao cedente', icon: 'message-circle', size: 'sm',
-      body: h('div.stack.tight', ui.callout({ tone: 'info', text: 'O caso segue aberto e o SLA segue correndo. O cedente recebe uma notificação.' }), campo),
+      body: h('div.stack.tight', ui.callout({ tone: 'info', text: 'O caso segue aberto e o SLA segue correndo. O pedido vai para a conversa do caso, com registro, e o cedente é avisado.' }), campo),
       footer: (api) => [ui.btn('Cancelar', { variant: 'ghost', onclick: () => api.close() }), ui.btn('Enviar pedido', { variant: 'primary', onclick: () => {
         const m = String(msg.value).trim();
         if (!m) { campo.setError('Descreva o que o cedente precisa enviar.'); return; }
         ledger.append({ actor: E.actors.user(meId()), acao: 'conciliacao.info_pedida', entidade: { kind: 'extrato', id: caso.linhaId }, resumo: `Mesa pediu informação sobre o crédito de ${fmt.brl(caso.valor)}: ${m}`, classe: 'R1' });
-        notify.send({ to: { orgId: caso.cedenteId }, tipo: 'alerta', titulo: 'Mesa pediu informação', corpo: m, link: '/cedente/conta' });
-        ui.toast('Pedido enviado ao cedente', { type: 'success' }); api.close();
+        const r = C.comUI.pedirInformacao({ ancora: { kind: 'caso', id: caso.id }, rotulo: 'Caso de conciliação (' + fmt.brl(caso.valor) + ')', orgId: caso.cedenteId, texto: m });
+        if (!r.ok) { campo.setError(r.erro); return; }
+        ui.toast('Pedido enviado ao cedente', { type: 'success', text: 'Segue na conversa do caso, com registro.', link: r.rota }); api.close();
       } })] });
   }
 

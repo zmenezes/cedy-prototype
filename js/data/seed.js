@@ -108,13 +108,14 @@
     usr('u-ops-3', 'Beatriz Lacerda', 'beatriz.lacerda@cedy.com.br', 'Compliance e risco', 'org-cedy', 'admin', false, 200);
 
     // Agentes de IA (autonomia por classe de risco: D3 + D5)
-    const ag = (id, nome, escopo, nivel, max, classe, m) => { S.agentes[id] = { id, nome, escopo, nivel, nivelMaximo: max, classe, metricas: m, desde: T(2026, 8, 17), modelo: 'Gateway Cedy (D6)', identidade: 'agente:' + id }; };
+    const ag = (id, nome, escopo, nivel, max, classe, m) => { S.agentes[id] = { id, nome, escopo, nivel, nivelMaximo: max, classe, metricas: m, desde: T(2026, 8, 17), modelo: 'Gateway Cedy', identidade: 'agente:' + id }; };
     ag('ag-docs', 'Agente de Documentos (KYC)', 'Lê contrato social, cartão CNPJ e certidões; confere consistência e sugere aprovação ou pendência.', 'assistido', 'autonomo', 'R1', { execucoes30d: 214, aceitas: 0.93, correcoes: 0.05, tempoMedio: '38 s' });
     ag('ag-prevalidacao', 'Agente de Pré-validação de Títulos', 'Confere chave da NF-e, duplicidade, sacado, lastro e elegibilidade do programa; propõe aprovar o lote.', 'assistido', 'assistido', 'R2', { execucoes30d: 96, aceitas: 0.91, correcoes: 0.07, tempoMedio: '12 s' });
     ag('ag-preco', 'Agente de Precificação', 'Sugere taxa e teto de aceite ao cedente a partir do histórico de leilões. Só aconselha.', 'sombra', 'assistido', 'R2', { execucoes30d: 58, aceitas: 0.0, correcoes: 0, tempoMedio: '3 s', obs: 'Em sombra: compara a sugestão com o resultado real.' });
     ag('ag-credito', 'Agente de Crédito', 'Avalia oportunidades contra a política do financiador e propõe taxa. Quem dá o lance é o motor de política ou um humano.', 'assistido', 'assistido', 'R2', { execucoes30d: 131, aceitas: 0.74, correcoes: 0.18, tempoMedio: '4 s' });
     ag('ag-conciliacao', 'Agente de Conciliação', 'Sugere rateio e prioridade de operações vencidas para casos parciais e empates. A Mesa aprova.', 'assistido', 'assistido', 'R3', { execucoes30d: 27, aceitas: 0.85, correcoes: 0.11, tempoMedio: '6 s' });
     ag('ag-cobranca', 'Agente de Cobrança e Régua', 'Lembretes a sacados e cedentes antes e depois do vencimento. Não altera valores.', 'autonomo', 'autonomo', 'R1', { execucoes30d: 342, aceitas: 0.99, correcoes: 0.0, tempoMedio: '1 s' });
+    ag('ag-atendimento', 'Agente de atendimento', 'Triagem e rascunho de resposta para a Mesa e resposta informativa com fonte nos chamados. Só chega a autônomo na categoria informativa; nunca age sobre dinheiro, acesso ou cadastro.', 'autonomo', 'autonomo', 'R0', { execucoes30d: 238, aceitas: 0.96, correcoes: 0.04, tempoMedio: '2 s', obs: 'Autônomo só na categoria "informativa com fonte", depois de 200 respostas revisadas, 95% sem edição e nenhum incidente.' });
     return S;
   }
 
@@ -315,6 +316,7 @@
     scenario(S);
     extras(S);
     if (C.seedPlataforma) C.seedPlataforma(S);
+    if (C.seedCom) C.seedCom(S);
     // marca notificações antigas como lidas; mantém as das últimas 36h não lidas
     const db = C.store.db; const NOW = C.clock.start;
     db.all('notifs').forEach((n) => { if (n.ts < NOW - 36 * 3600e3) n.lida = true; });

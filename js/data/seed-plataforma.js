@@ -247,6 +247,7 @@
       { agente: 'ag-credito', modelo: 'mdl-2', base: 131 / 30, tin: 28000, tout: 2000, lat: 3400 },
       { agente: 'ag-conciliacao', modelo: 'mdl-1', base: 27 / 30, tin: 12000, tout: 900, lat: 2200 },
       { agente: 'ag-cobranca', modelo: 'mdl-3', base: 342 / 30, tin: 2500, tout: 350, lat: 800 },
+      { agente: 'ag-atendimento', modelo: 'mdl-3', base: 238 / 30, tin: 3200, tout: 420, lat: 1500 },
     ];
     usoCfg.forEach((a) => {
       const M = S.modelosIA[a.modelo];

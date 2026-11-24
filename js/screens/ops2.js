@@ -126,6 +126,7 @@
   async function mudarNivel(ag, novo) {
     if (novo === ag.nivel) return;
     if (!needAdmin()) return;
+    if (ag.id === 'ag-atendimento' && novo === 'autonomo') { ui.toast('Autonomia por categoria', { type: 'info', text: 'O agente de atendimento só fica autônomo na categoria informativa, com métricas de promoção. Isso é feito em Saúde da comunicação.' }); if (C.store.session.user().perfil === 'superadmin') C.router.go('/super/comunicacao'); return; }
     if (RANK[novo] > (RANK[ag.nivelMaximo] !== undefined ? RANK[ag.nivelMaximo] : 2)) { ui.toast('Acima do teto', { type: 'warn', text: `O teto de ${ag.nome} é ${nivelLabel(ag.nivelMaximo)}.` }); return; }
     const de = ag.nivel;
     await Ops.solicitarOuAplicar({

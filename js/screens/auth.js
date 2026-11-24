@@ -96,6 +96,15 @@
   }
 
   /* --------------------------------- login ------------------------------- */
+  /** aviso de reinício: a versão dos dados mudou e o que o visitante tinha feito foi recriado (app.js grava a marca) */
+  function resetNotice() {
+    let marca = null; try { marca = localStorage.getItem('cedy-proto-notice'); } catch (e) { /* sem armazenamento */ }
+    if (!marca) return null;
+    const box = ui.callout({ tone: 'info', title: 'Protótipo atualizado: os dados foram reiniciados',
+      text: 'Esta versão inclui a Central de comunicação (mensagens, chamados e comunicados). Para isso, os dados de demonstração foram recriados e o que você tinha feito antes foi descartado. Os dados são fictícios e ficam só no seu navegador.',
+      actions: [ui.btn('Entendi', { size: 'sm', variant: 'secondary', onclick: () => { try { localStorage.removeItem('cedy-proto-notice'); } catch (e) { /* */ } box.remove(); } })] });
+    return box;
+  }
   function renderLogin() {
     const emailIn = ui.input({ type: 'email', placeholder: 'voce@empresa.com.br', autocomplete: 'username', onEnter: () => submit() });
     const email = ui.field({ label: 'E-mail corporativo', required: true }, emailIn);
@@ -133,6 +142,7 @@
     });
     return pubShell(
       authHead('Entrar na Cedy', 'Acesse suas operações, lances e recebimentos.'),
+      resetNotice(),
       ui.card({ title: 'Acesso com e-mail e senha' },
         email, pw,
         ui.btn('Entrar', { variant: 'primary', size: 'lg', block: true, icon: 'arrow-right', onclick: submit }),

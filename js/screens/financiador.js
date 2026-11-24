@@ -591,7 +591,7 @@
     const op = op0;
     const head = ui.pageHeader({ back, eyebrow: `${op.canal === 'vitrine' ? 'Vitrine' : 'Balcão'} · ${prodName(op.produto)}`, title: op.id,
       subtitle: `${fmt.brl(op.face)} · ${(op.tituloIds || []).length} títulos · prazo médio ${op.prazoMedio || '—'} dias`,
-      actions: [o_regresso(op), ui.status('operacao', op.status)] });
+      actions: [o_regresso(op), ui.status('operacao', op.status), C.comUI.btnConversar({ kind: 'operacao', id: op.id }, { rotulo: 'Operação ' + op.id })] });
     const linhaTempo = op.status === 'aberta' ? h('div.row.between', ui.countdown(op.validadeAte, { prefix: 'encerra em', endLabel: 'leilão encerrado' }), h('span.small.muted', `publicada ${fmt.rel(op.publicadaEm || op.criadaEm)}`)) : null;
 
     if (op.status !== 'aberta') {
@@ -602,7 +602,7 @@
     const parecer = E.ia.parecer(op, me());
     const main = h('div.stack');
     const bidCard = painelLance(op, parecer);
-    main.append(bidCard, rankingVivo(op));
+    main.append(bidCard, rankingVivo(op), C.comUI.esclarecimentosCard(op.id));
     // "Usar taxa sugerida" preenche o campo e recalcula; o humano confirma com Dar lance.
     const usarSugerida = () => {
       const v = r2(Math.min(2.50, Math.max(1.20, parecer.taxaSugerida)));

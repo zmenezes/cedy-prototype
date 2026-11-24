@@ -262,7 +262,7 @@
       const custo = custoMesIA(); const teto = cfgOf().ia.tetoCustoMesBRL;
       const ap = db.where('aprovacoes', (a) => a.status === 'pendente');
       const alerts = collectAlerts();
-      const groups = [['interno', 'Núcleo', 'Motor, dados e API da Cedy.'], ['integracao', 'Integrações externas', 'Parceiros, governo e mensageria (simuladas no protótipo).'], ['ia', 'IA', 'Gateway e modelos sob a decisão D6.']];
+      const groups = [['interno', 'Núcleo', 'Motor, dados e API da Cedy.'], ['integracao', 'Integrações externas', 'Parceiros, governo e mensageria (simuladas no protótipo).'], ['ia', 'IA', 'Gateway e modelos de IA da Cedy.']];
       const feed = ledger.all().filter((e) => e.classe === 'R3' || /^(mercado|servico|incidente|ia|plataforma|aprovacao|agente)/.test(e.acao)).slice(-12).reverse();
       C.mount(body, h('div.stack.sup-page',
         ui.pageHeader({ eyebrow: 'Superadmin · plataforma', title: 'Saúde da plataforma', subtitle: 'Visão calma do que importa: disponibilidade, incidentes, custo de IA e pendências com ação direta.', actions: [ui.btn('Abrir incidente', { variant: 'secondary', icon: 'siren', route: '/super/incidentes' }), ui.btn('Ver serviços', { variant: 'primary', icon: 'server-cog', route: '/super/servicos' })] }),
@@ -368,7 +368,7 @@
     importacao: { nome: 'Importação (borderô)', afeta: 'Criação de lotes por planilha ou arquivo.', risco: 'R3', conta: () => db.where('lotes', (l) => l.status === 'rascunho').length + ' lotes em rascunho' },
     aceiteAutomatico: { nome: 'Aceite automático', afeta: 'Aceite pelo teto do cedente sem clique.', risco: 'R2', conta: () => db.where('operacoes', (o) => o.tetoTaxa && o.status === 'aberta').length + ' operações com teto ativo' },
     lanceAutomatico: { nome: 'Lance automático', afeta: 'Políticas de financiadores dão lance sozinhas.', risco: 'R2', conta: () => db.where('financiadores', () => true).length + ' políticas avaliadas' },
-    agentes: { nome: 'Agentes de IA', afeta: 'Os 6 agentes param de propor; a Mesa decide sem resumo.', risco: 'R2', conta: () => db.where('propostas', (p) => p.status === 'pendente').length + ' propostas pendentes' },
+    agentes: { nome: 'Agentes de IA', afeta: 'Todos os agentes param de propor e de responder; a Mesa decide sem resumo e as conversas seguem só com pessoas.', risco: 'R2', conta: () => db.where('propostas', (p) => p.status === 'pendente').length + ' propostas pendentes' },
     novosCadastros: { nome: 'Novos cadastros', afeta: 'Cadastro público de empresas (wizard em /cadastro).', risco: 'R2', conta: () => db.where('orgs', (o) => o.status === 'kyc').length + ' empresas em análise' },
   };
   const flagMeta = (k) => FLAG_META[k] || { nome: k, afeta: 'Funcionalidade da plataforma.', risco: 'R2', conta: () => '' };
@@ -719,7 +719,7 @@
     const desligado = cfg.flags && cfg.flags.agentes === false;
     if (!desligado) {
       const ok = await confirmPhrase({ phrase: 'PAUSAR AGENTES', title: 'Pausar todos os agentes?', icon: 'octagon-pause',
-        text: 'Todos os 6 agentes param de propor agora. A Mesa decide sem resumos até a retomada. Ação crítica com trilha R3 e aviso à operação.' });
+        text: `Todos os ${db.all('agentes').length} agentes param de propor e de responder agora, inclusive o agente de atendimento (as conversas seguem só com pessoas). A Mesa decide sem resumos até a retomada. Ação crítica com trilha R3 e aviso à operação.` });
       if (!ok) return;
       db.setCfg({ flags: Object.assign({}, cfg.flags, { agentes: false }) });
       db.all('agentes').forEach((a) => db.patch('agentes', a.id, { nivelAnterior: a.nivel, nivel: 'inativo' }));

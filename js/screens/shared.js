@@ -41,7 +41,8 @@
   function notifPrefs(u) {
     u.notifPrefs = u.notifPrefs || {};
     u.notifPrefs.eventos = u.notifPrefs.eventos || {};
-    (NOTIF_EVENTS[session.role()] || NOTIF_EVENTS.cedente).forEach(([id]) => { u.notifPrefs.eventos[id] = u.notifPrefs.eventos[id] || { email: true, push: true, wa: false }; });
+    (NOTIF_EVENTS[session.role()] || NOTIF_EVENTS.cedente).forEach(([id]) => { u.notifPrefs.eventos[id] = u.notifPrefs.eventos[id] || { app: true, push: true }; });
+    u.notifPrefs.informativas = u.notifPrefs.informativas || {};
     if (u.notifPrefs.digest === undefined) u.notifPrefs.digest = false;
     return u.notifPrefs;
   }
@@ -392,6 +393,9 @@
   }
 
   /* ----------------------- aba Notificações (preferências) ----------------------- */
+  /** Três classes (CC-19): obrigatórias travadas, operacionais por canal e horário, informativas só com opt-in */
+  const OBRIGATORIAS = [['Segurança da conta', 'Acesso de suporte à sua conta, redefinição de 2FA, troca do e-mail de contato.', 'shield-alert'], ['Mudança de termos e de regras', 'Comunicados contratuais: exigem a sua ciência e têm data de vigência.', 'scroll-text'], ['Dinheiro e prazo que geram obrigação', 'Pagamento em atraso, recompra devida, assinatura pendente e vencimento no dia.', 'banknote'], ['Incidente que afeta você', 'Indisponibilidade da plataforma ou de um serviço que você usa.', 'siren']];
+  const INFORMATIVAS = [['novidades', 'Novidades da plataforma', 'Funcionalidades novas e melhorias, no máximo uma vez por semana.'], ['resumo', 'Resumo semanal da carteira', 'Um panorama das operações e dos prazos da semana.'], ['relatorios', 'Relatórios mensais disponíveis', 'Aviso quando o relatório do mês fica pronto.'], ['dicas', 'Dicas de uso', 'Boas práticas para operar com mais segurança.']];
   function tabNotifPrefs(ctx) {
     const u = me();
     const evs = NOTIF_EVENTS[ctx.role] || NOTIF_EVENTS.cedente;
@@ -400,21 +404,23 @@
       const rows = evs.map(([id, lab]) => {
         const st = p.eventos[id];
         const sw = (ch, nome) => h('td', ui.switch({ aria: `${lab}, ${nome}`, checked: !!st[ch], onChange: (v) => setNotif(cur, id, ch, v) }));
-        return h('tr', h('td', lab), sw('email', 'e-mail'), sw('push', 'push'), sw('wa', 'WhatsApp'));
+        return h('tr', h('td', lab), sw('app', 'no app'), sw('push', 'push'));
       });
-      return h('div.tbl-wrap', h('div.tbl-scroll', h('table.tbl.sh-matrix', h('thead', h('tr', h('th', 'Evento'), h('th', 'E-mail'), h('th', 'Push'), h('th', 'WhatsApp'))), h('tbody', rows))));
+      return h('div.tbl-wrap', h('div.tbl-scroll', h('table.tbl.sh-matrix', h('thead', h('tr', h('th', 'Evento'), h('th', 'No app'), h('th', 'Push (simulado)'))), h('tbody', rows))));
     });
     const p0 = notifPrefs(u);
     const saveQuiet = (k, v) => { const p = notifPrefs(db.get('users', u.id)); p[k] = v; db.patch('users', u.id, { notifPrefs: p }); ui.toast('Horário de silêncio salvo', { type: 'success' }); };
     const sFrom = ui.select({ options: HOURS, value: p0.quietFrom || '22:00', aria: 'Silenciar a partir de', onChange: (v) => saveQuiet('quietFrom', v) });
     const sTo = ui.select({ options: HOURS, value: p0.quietTo || '07:00', aria: 'Voltar a avisar às', onChange: (v) => saveQuiet('quietTo', v) });
-    const digest = ui.switch({ aria: 'Resumo diário', checked: !!p0.digest,
-      onChange: (v) => { const p = notifPrefs(db.get('users', u.id)); p.digest = v; db.patch('users', u.id, { notifPrefs: p }); ui.toast(v ? 'Resumo diário ativado' : 'Resumo diário desativado', { type: 'success' }); } });
+    const info = ui.live(['users'], () => { const p = notifPrefs(db.get('users', u.id)); return INFORMATIVAS.map(([id, tit, hint]) => prefRow(tit, hint, ui.switch({ aria: tit, checked: !!p.informativas[id], onChange: (v) => { const q = notifPrefs(db.get('users', u.id)); q.informativas[id] = v; db.patch('users', u.id, { notifPrefs: q }); ui.toast(v ? 'Você passará a receber: ' + tit : 'Desativado: ' + tit, { type: 'success' }); } }))); });
     return h('div.stack',
-      ui.card({ title: 'Eventos e canais', subtitle: 'Escolha onde receber cada aviso. A alteração vale na hora.' }, matrix),
-      ui.card({ title: 'Horário de silêncio', subtitle: 'Avisos push e WhatsApp esperam até o fim do silêncio. E-mails continuam chegando.' },
+      ui.card({ title: 'Obrigatórias', subtitle: 'Segurança, termos, dinheiro e prazo. Chegam sempre no app e por e-mail e não podem ser desligadas.', actions: ui.badge('Sempre ligadas', 'neutral', { icon: 'lock' }) },
+        OBRIGATORIAS.map(([tit, hint, ic]) => prefRow(tit, hint, h('span.sh-locked', icon('lock', 14), ui.switch({ aria: tit + ' (obrigatória, não pode ser desligada)', checked: true, disabled: true })))),
+        h('small.muted', 'O e-mail das obrigatórias é simulado no protótipo e nunca traz valores nem dados sensíveis: só um aviso e o caminho de volta ao app.')),
+      ui.card({ title: 'Operacionais', subtitle: 'Eventos do dia a dia das suas operações. Escolha onde receber cada um. A alteração vale na hora.' }, matrix),
+      ui.card({ title: 'Horário de silêncio', subtitle: 'Avisos push operacionais esperam até o fim do silêncio. As obrigatórias não esperam.' },
         ui.grid(2, ui.field({ label: 'Silenciar a partir de' }, sFrom), ui.field({ label: 'Voltar a avisar às' }, sTo))),
-      ui.card({ title: 'Resumo' }, prefRow('Resumo diário', 'Um e-mail por manhã com tudo do dia anterior, em vez de avisos avulsos fora do horário comercial.', digest)));
+      ui.card({ title: 'Informativas', subtitle: 'Só chegam se você ativar, em resumo. Nenhuma está ligada por padrão.' }, info));
   }
 
   /* ----------------------------- aba Preferências ----------------------------- */
@@ -571,7 +577,7 @@
       const accountCard = o.kind === 'cedente' ? cardContasCad(o) : o.kind === 'originador' ? cardOrigContaCad(o) : cardFinCad(o);
       const pendente = (o.status === 'kyc' || o.status === 'pendente') && st !== 'aprovado';
       return h('div.sh-page',
-        ui.pageHeader({ eyebrow: 'Cadastro', title: 'Cadastro e documentos', subtitle: st === 'aprovado' ? 'Documentos, representantes e declarações da empresa.' : 'O resto do app continua usável enquanto o cadastro é analisado.', actions: [ui.status('kyc', st)] }),
+        ui.pageHeader({ eyebrow: 'Cadastro', title: 'Cadastro e documentos', subtitle: st === 'aprovado' ? 'Documentos, representantes e declarações da empresa.' : 'O resto do app continua usável enquanto o cadastro é analisado.', actions: [ui.status('kyc', st), C.comUI.btnConversar({ kind: 'cadastro', id: o.id }, { rotulo: 'Cadastro da empresa' })] }),
         h('div.stack',
           ui.card({ class: 'sh-stepcard' }, ui.stepper(['Dados', 'Documentos', 'Análise da Mesa', 'Aprovado'], stepIdx)),
           pendente ? ui.callout({ tone: 'warn', icon: 'triangle-alert', title: 'Cadastro em análise', text: 'Você pode operar normalmente. Assim que a Mesa aprovar, o selo muda aqui na hora.' }) : null,
@@ -761,7 +767,7 @@
       h('div.stack',
         h('div.sh-grid-2',
           ui.card({ title: 'Perguntas frequentes' }, search, listWrap),
-          ui.card({ title: 'Falar com a Mesa', subtitle: 'Resposta em até 1 dia útil. Vira notificação para a Mesa.' },
+          ui.card({ title: 'Falar com a Mesa', subtitle: 'Abre um chamado com protocolo. Resposta em até 1 dia útil (prazo de referência).' },
             ui.field({ label: 'Assunto' }, fAssunto), wMsg, ui.field({ label: 'Anexo', optional: true }, fAnx),
             h('div.row.end', ui.btn('Enviar mensagem', { variant: 'primary', icon: 'send', onclick: () => sendMesa(role, fAssunto, fMsg, wMsg) })))),
         h('div.sh-grid-2',
@@ -779,56 +785,25 @@
     const wrap = h('div.sh-faq-item', { dataset: { open: '0' } }, btn, h('div.sh-faq-a', h('div.sh-faq-a-in', h('div', x))));
     return wrap;
   }
+  /** "Falar com a Mesa" abre um chamado com protocolo e prazo de resposta (Central de comunicação) */
   function sendMesa(role, fAssunto, fMsg, wMsg) {
     const txt = trim(fMsg.value);
     if (!txt) { wMsg.setError('Escreva a mensagem para a Mesa.'); fMsg.input.focus(); return; }
     wMsg.setError('');
-    const prot = 'MESA-' + Math.floor(C.clock.now() / 1000).toString(36).toUpperCase().slice(-6);
-    const assunto = { duvida: 'dúvida sobre operação', documento: 'documento ou cadastro', erro: 'erro ou divergência', lgpd: 'privacidade e LGPD', outro: 'outro assunto' }[fAssunto.value] || 'outro assunto';
-    notify.send({ to: { role: 'ops' }, tipo: 'info', titulo: 'Pedido de ajuda: ' + assunto, corpo: `${me().nome} (${org().fantasia || org().nome}): ${txt.slice(0, 140)} [${prot}]`, link: '/ops/notificacoes' });
-    log('ajuda.contato', `Contato com a Mesa aberto (${prot})`, 'R1');
-    ui.toast('Enviado à Mesa', { type: 'success', text: 'Protocolo ' + prot + '. Respondemos em até 1 dia útil.' });
+    const u = me();
+    if (u.perfil === 'leitor') { ui.toast('O perfil leitor só lê', { type: 'warn', text: 'Peça a um administrador ou operador para abrir o chamado.' }); return; }
+    const cat = { duvida: 'operacoes', documento: u.perfil === 'admin' ? 'cadastro' : 'outros', erro: 'plataforma', lgpd: 'outros', outro: 'outros' }[fAssunto.value] || 'outros';
+    const assunto = { duvida: 'Dúvida sobre operação', documento: 'Documento ou cadastro', erro: 'Erro ou divergência', lgpd: 'Privacidade e LGPD', outro: 'Outro assunto' }[fAssunto.value] || 'Outro assunto';
+    const r = E.com.abrirConversa({ userId: u.id, canal: 'cedy', categoria: cat, titulo: assunto, texto: txt });
+    if (!r.ok) { wMsg.setError(r.erro); return; }
+    ui.toast('Chamado ' + r.conv.protocolo + ' aberto', { type: 'success', text: r.conv.prioridade === 'critica' ? 'Prioridade crítica: ' + r.conv.prioridadeMotivo : 'Prazo de resposta: ' + fmt.datetime(r.conv.slaAte) + '.', link: E.com.rotaConversa(r.conv, u.id) });
     fMsg.value = '';
   }
   function legalDrawer(title, text) {
     ui.drawer({ title, icon: 'file-text', size: 'sm', body: h('div.stack.tight', h('p.small.muted', 'Resumo em linguagem simples. O texto jurídico final sai com o parecer (P13).'), h('p', text)) });
   }
 
-  /* =====================================================================
-     NOTIFICAÇÕES (lista completa)
-     ===================================================================== */
-  const TIPO_ICON = { info: 'info', sucesso: 'circle-check', alerta: 'triangle-alert', erro: 'circle-alert' };
-  const TIPO_TONE = { info: 'blue', sucesso: 'green', alerta: 'amber', erro: 'red' };
-  function renderNotifs(ctx) {
-    let onlyUnread = ctx.query.f === 'nao-lidas'; let tipos = new Set();
-    const seg = ui.segmented({ aria: 'Filtro de leitura', value: onlyUnread ? 'nao' : 'todas', options: [{ value: 'todas', label: 'Todas' }, { value: 'nao', label: 'Não lidas' }], onChange: (v) => { onlyUnread = v === 'nao'; draw(); } });
-    const chips = ui.chips({ aria: 'Tipos de notificação', options: [['info', 'Informação'], ['sucesso', 'Sucesso'], ['alerta', 'Alerta'], ['erro', 'Erro']].map(([value, label]) => ({ value, label })), onChange: (v) => { tipos = new Set(v); draw(); } });
-    const list = h('div.sh-notifs');
-    const dayKey = (ts) => C.cal.key(ts);
-    function draw() {
-      let rows = notify.mine().slice().sort((a, b) => b.ts - a.ts);
-      if (onlyUnread) rows = rows.filter((n) => !n.lida);
-      if (tipos.size) rows = rows.filter((n) => tipos.has(n.tipo));
-      C.clear(list);
-      if (!rows.length) { list.append(ui.card({}, ui.empty({ icon: 'bell', title: tipos.size ? 'Nada com esses filtros' : onlyUnread ? 'Tudo lido' : 'Sem notificações', text: tipos.size ? 'Remova um filtro para ver mais avisos.' : onlyUnread ? 'Nada pendente por aqui.' : 'Quando algo acontecer, avisamos aqui.' }))); return; }
-      const now = C.clock.now(); const today = dayKey(now), yest = dayKey(now - 86400000);
-      const groups = [['Hoje', []], ['Ontem', []], ['Esta semana', []], ['Anteriores', []]];
-      rows.forEach((n) => { const k = dayKey(n.ts); groups[k === today ? 0 : k === yest ? 1 : (now - n.ts) < 7 * 86400000 ? 2 : 3][1].push(n); });
-      groups.forEach(([lab, arr]) => {
-        if (!arr.length) return;
-        list.append(h('div.sh-day', lab + ' · ' + arr.length), ui.card({ flush: true, class: 'sh-notif-card' }, arr.map(notifRow)));
-      });
-    }
-    function notifRow(n) {
-      return h('button', { type: 'button', class: ['notif-item', 'sh-notif-row', !n.lida && 'unread'], onclick: () => { notify.read(n.id); if (n.link) C.router.go(n.link); } },
-        h('span', { class: ['notif-ic', 'tone-' + (TIPO_TONE[n.tipo] || 'blue')] }, icon(TIPO_ICON[n.tipo] || 'info', 16)),
-        h('span.notif-t', h('strong', n.titulo), n.corpo && h('small', n.corpo), h('time', fmt.rel(n.ts))));
-    }
-    const body = ui.live(['notifs'], () => { draw(); return list; });
-    return h('div.sh-page',
-      ui.pageHeader({ eyebrow: 'Central', title: 'Notificações', subtitle: 'Tudo que a plataforma mandou para você.', actions: [ui.btn('Marcar todas como lidas', { variant: 'secondary', icon: 'check', onclick: () => notify.readAll() })] }),
-      h('div.toolbar', seg, chips), body);
-  }
+  /* As notificações vivem na caixa de entrada unificada (screens/com.js): /<perfil>/mensagens */
 
   /* =====================================================================
      Registro de rotas (uma vez por papel)
@@ -836,7 +811,6 @@
   ['cedente', 'financiador', 'originador', 'sacado', 'ops'].forEach((role) => {
     C.router.register({ path: '/' + role + '/configuracoes', roles: [role], title: 'Configurações', render: renderConfig });
     C.router.register({ path: '/' + role + '/ajuda', roles: [role], title: 'Ajuda', render: renderAjuda });
-    C.router.register({ path: '/' + role + '/notificacoes', roles: [role], title: 'Notificações', render: renderNotifs });
   });
   ['cedente', 'financiador', 'originador'].forEach((role) => {
     C.router.register({ path: '/' + role + '/cadastro', roles: [role], title: 'Cadastro', render: renderCadastro });

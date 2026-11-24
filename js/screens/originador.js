@@ -612,7 +612,7 @@
     const ini = cal.spTs(y, m, 1, 0, 0), fim = cal.spTs(m === 12 ? y + 1 : y, m === 12 ? 1 : m + 1, 1, 0, 0);
     const ops = paidOps(p.cedenteId).filter((o) => o.pagoEm >= ini && o.pagoEm < fim);
     const ct = db.where('contestacoes', (c) => c.premiacaoId === p.id)[0];
-    ui.drawer({ title: `${fmt.monthLong(p.competencia)} · ${ced ? ced.fantasia : ''}`, subtitle: `Base TS ${fmt.brl(p.baseTS)} · ${fmt.plural(p.nOps, 'operação', 'operações')} no relatório · pagamento em ${fmt.date(p.pagamentoEm)}`, icon: 'award', size: 'lg',
+    ui.drawer({ title: `${fmt.monthLong(p.competencia)} · ${ced ? ced.fantasia : ''}`, subtitle: `Base TS ${fmt.brl(p.baseTS)} · ${fmt.plural(p.nOps, 'operação', 'operações')} no relatório · pagamento em ${fmt.date(p.pagamentoEm)}`, icon: 'award', size: 'lg', headerRight: C.comUI.btnConversar({ kind: 'competencia', id: p.id }, { size: 'sm', rotulo: 'Competência ' + fmt.monthLong(p.competencia) }),
       body: h('div.stack',
         ui.kv([['Indicação (10%)', fmt.brl(p.indicacao)], ['Gestão (30%)', fmt.brl(p.gestao)], ['Total', fmt.brl(p.total)], ['Parte do sub' + (p.subId ? ` (${subNameOf(p.subId)} · ${p.splitPct || 0}%)` : ''), p.parteSub ? '−' + fmt.brl(p.parteSub) : '—'], ['Líquido da Lumen', h('strong', fmt.brl(liquidoOf(p)))], ['Status', ui.status('premio', p.status)], ['Relatório em', fmt.date(p.relatorioEm)], ['Pagamento em', fmt.date(p.pagamentoEm)], ['Contestável até', fmt.date(p.contestavelAte)]]),
         ct ? ui.callout({ tone: 'warn', title: 'Em contestação', text: `${ct.motivo} (aberta em ${fmt.date(ct.abertaEm)}). O pagamento desta linha está suspenso até a Mesa decidir.` }) : null,

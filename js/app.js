@@ -4,6 +4,10 @@
   function boot() {
     const t0 = performance.now();
     if (/[?&]reset\b/.test(location.search)) { localStorage.removeItem('cedy-proto-0.1'); history.replaceState(null, '', location.pathname + location.hash); }
+    else {
+      // dados salvos de uma versão anterior são recriados: deixa a marca para o aviso na tela de entrada
+      try { const raw = localStorage.getItem('cedy-proto-0.1'); if (raw) { const s = JSON.parse(raw); if (s && s.v !== C.store.VERSION) localStorage.setItem('cedy-proto-notice', String(s.v)); } } catch (e) { /* ignora */ }
+    }
     try {
       C.store.init(C.seed.build);
     } catch (e) {

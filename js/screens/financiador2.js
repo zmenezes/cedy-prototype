@@ -232,7 +232,7 @@
         back: '/financiador/carteira', eyebrow: 'Carteira · ' + F.prod(op.produto),
         title: op.id,
         subtitle: `${fmt.brl(op.face, { round: true })} · ${fmt.taxa(op.taxaFinal)} · ${(db.get('orgs', op.cedenteId) || {}).fantasia || ''}`,
-        actions: [ui.status('operacao', op.status)],
+        actions: [ui.status('operacao', op.status), C.comUI.btnConversar({ kind: 'operacao', id: op.id }, { rotulo: 'Operação ' + op.id })],
       }),
       ui.stepper(STEPS, stepIdx(op)),
       statusPanel(op),

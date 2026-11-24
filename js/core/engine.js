@@ -359,7 +359,7 @@
         notify.send({ to: { orgId: c.partes.cedenteId }, tipo: 'sucesso', titulo: `Cessão assinada por ambas as partes`, corpo: `Pagamento previsto até ${fmt.datetime(op.pagamentoLimite)}.`, link: '/cedente/operacoes/' + c.opId });
       } else {
         const outro = parte === 'cedente' ? c.partes.financiadorId : c.partes.cedenteId;
-        notify.send({ to: { orgId: outro }, tipo: 'info', titulo: `Falta a sua assinatura em ${contratoId}`, link: (parte === 'cedente' ? '/financiador/operacoes/' : '/cedente/operacoes/') + c.opId });
+        notify.send({ to: { orgId: outro }, tipo: 'info', titulo: `Falta a sua assinatura em ${contratoId}`, link: (parte === 'cedente' ? '/financiador/operacoes/' : '/cedente/operacoes/') + c.opId, exigeAcao: { coll: 'contratos', id: contratoId, campo: 'status', enquanto: ['gerado', 'parcial'] } });
       }
     });
     return ok({ completo: db.get('contratos', contratoId).status === 'assinado' });
@@ -508,7 +508,7 @@
     db.batch(() => {
       db.patch('operacoes', opId, { regressoAcionado: true, recompra: { valor: r2(saldo + encargos), saldo, encargos, ate: cal.addUteis(now(), 5), status: 'devida' } });
       ledger.append({ actor: A.user(userId), acao: 'regresso.acionado', entidade: { kind: 'operacao', id: opId }, resumo: `Regresso acionado em ${opId}: recompra de ${fmt.brl(saldo + encargos)} (saldo ${fmt.brl(saldo)} + encargos ${fmt.brl(encargos)})`, classe: 'R3' });
-      notify.send({ to: { orgId: op.cedenteId }, tipo: 'erro', titulo: `Recompra devida: ${opId}`, corpo: `${fmt.brl(saldo + encargos)} até ${fmt.date(cal.addUteis(now(), 5))}.`, link: '/cedente/operacoes/' + opId });
+      notify.send({ to: { orgId: op.cedenteId }, tipo: 'erro', titulo: `Recompra devida: ${opId}`, corpo: `${fmt.brl(saldo + encargos)} até ${fmt.date(cal.addUteis(now(), 5))}.`, link: '/cedente/operacoes/' + opId, exigeAcao: { coll: 'operacoes', id: opId, campo: 'status', enquanto: ['vencida'] } });
     });
     return ok();
   };
@@ -541,7 +541,7 @@
       db.where('operacoes', (o) => o.status === 'aguardando_pagamento' && t > o.pagamentoLimite && !o.atrasoAvisado).forEach((o) => {
         db.patch('operacoes', o.id, { atrasoAvisado: true });
         notify.send({ to: { orgId: o.cedenteId }, tipo: 'alerta', titulo: `Pagamento de ${o.id} em atraso`, corpo: 'O financiador não pagou até o limite. A Cedy já acionou o financiador.', link: '/cedente/operacoes/' + o.id });
-        notify.send({ to: { orgId: o.financiadorId }, tipo: 'erro', titulo: `Pagamento de ${o.id} em atraso`, corpo: 'Regularize para evitar desistência e tarifa.', link: '/financiador/operacoes/' + o.id });
+        notify.send({ to: { orgId: o.financiadorId }, tipo: 'erro', titulo: `Pagamento de ${o.id} em atraso`, corpo: 'Regularize para evitar desistência e tarifa.', link: '/financiador/operacoes/' + o.id, exigeAcao: { coll: 'operacoes', id: o.id, campo: 'status', enquanto: ['aguardando_pagamento'] } });
         ledger.append({ ts: t, actor: A.sistema('Relógio'), acao: 'operacao.pagamento_atrasado', entidade: { kind: 'operacao', id: o.id }, resumo: `Pagamento de ${o.id} passou do limite (${fmt.datetime(o.pagamentoLimite)})`, classe: 'R2' });
       });
       // 3) feed bancário simulado: pagamentos de sacados com data ≤ agora
@@ -697,6 +697,7 @@
     autonomia: { label: 'Autonomia de agente', classe: 'R3' },
     premiacao_pagar: { label: 'Pagamento de premiação', classe: 'R3' },
     fatura_isentar: { label: 'Isenção de fatura', classe: 'R2' },
+    comunicado: { label: 'Comunicado contratual', classe: 'R3' },
   };
   /** Quem não é Superadmin pede; outro Superadmin aprova. payload define o efeito; antes/depois são só para exibir. */
   E.solicitarAprovacao = function ({ tipo, titulo, resumo, payload, antes, depois, userId, motivo }) {
@@ -710,9 +711,10 @@
   E.aplicadoresAprovacao = {
     config: (p) => db.setCfg(p.patch),
     programa: (p) => { db.put('produtos', p.produto); },
-    autonomia: (p) => db.patch('agentes', p.agenteId, p.patch),
+    autonomia: (p) => (p.categoriaCom ? E.ia.com.aplicarPromocao(p.categoriaCom, p.promovidoPor) : db.patch('agentes', p.agenteId, p.patch)),
     premiacao_pagar: (p) => (p.ids || []).forEach((id) => db.patch('premiacoes', id, { status: 'pago', pagoEm: now() })),
     fatura_isentar: (p) => db.patch('faturas', p.faturaId, { status: 'isenta', isentaMotivo: p.motivo || null, isentaEm: now() }),
+    comunicado: (p) => { if (E.com && E.com.comunicado) E.com.comunicado._publicarAprovado(p.comunicadoId); },
   };
   E.decidirAprovacao = function (id, decisao, userId, motivo) {
     const a = db.get('aprovacoes', id); if (!a) return fail('Solicitação não encontrada.');
@@ -740,7 +742,7 @@
     const max = (cfg().seguranca || {}).verComoMaxMin || 30; const min = Math.min(Math.max(5, minutos || 15), max);
     ledger.append({ actor: A.user(por.id), acao: 'acesso.ver_como_iniciado', entidade: { kind: 'usuario', id: alvo.id }, resumo: `${por.nome} iniciou "ver como" ${alvo.nome} (${org.fantasia || org.nome}) por ${min} min. Justificativa: ${justificativa}`, classe: 'R3', detalhe: { justificativa, minutos: min } });
     db.put('eventosSeg', { id: C.uid('es'), ts: now(), tipo: 'ver_como', userId: por.id, orgId: org.id, severidade: 'alta', ip: '10.20.0.14', detalhe: `${por.nome} entrou como ${alvo.nome}: ${justificativa}` });
-    notify.send({ to: { orgId: org.id }, tipo: 'alerta', titulo: 'Acesso de suporte da Cedy à sua conta', corpo: `${por.nome} acessou a conta em modo somente leitura por até ${min} min. Motivo: ${justificativa}`, link: '/' + C.roleOfOrg(org) + '/notificacoes' });
+    notify.send({ to: { orgId: org.id }, tipo: 'alerta', titulo: 'Acesso de suporte da Cedy à sua conta', corpo: `${por.nome} acessou a conta em modo somente leitura por até ${min} min. Motivo: ${justificativa}`, link: '/' + C.roleOfOrg(org) + '/mensagens' });
     S.set({ userId: alvo.id, orgId: alvo.orgId, role: C.roleOfOrg(org), impersonando: { por: { userId: por.id, orgId: por.orgId, role: sess.role }, ate: now() + min * 60e3, justificativa, alvoUserId: alvo.id } });
     return ok({ rota: C.homeFor(S.get()) });
   };

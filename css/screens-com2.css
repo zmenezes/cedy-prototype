@@ -1,0 +1,26 @@
+/* Central de comunicação, lado da Mesa: fila de chamados e atendimento (prefixo cm2-) */
+.cm2-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--s-3); }
+.cm2-toolbar { margin-top: var(--s-4); }
+.cm2-filters { display: flex; flex-direction: column; gap: var(--s-2); }
+.cm2-prio { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cm2-page .tbl tr.is-late { box-shadow: inset 3px 0 0 var(--red); background: color-mix(in oklab, var(--red-tint) 40%, transparent); }
+.cm2-page .stack > .tbl-wrap { margin-top: var(--s-2); }
+
+/* painel lateral de atendimento */
+.cm2-acao { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-3) 0; border-top: 1px solid var(--line); }
+.cm2-acao:first-of-type { border-top: 0; padding-top: 0; }
+.cm2-acao-h { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); flex-wrap: wrap; }
+.cm2-checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); color: var(--ink-2); }
+.cm2-checks li { display: flex; align-items: flex-start; gap: 6px; }
+.cm2-checks li svg { flex: none; margin-top: 2px; color: var(--green-ink); }
+.cm2-checks li.is-bad svg { color: var(--red-ink); }
+.cm2-checks li.is-bad { color: var(--red-ink); }
+.cm2-page .row.wrap, .cm-side .row.wrap { flex-wrap: wrap; gap: var(--s-2); }
+
+@media (max-width: 1100px) { .cm2-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .cm2-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* pedido de urgência no painel de atendimento */
+.cm2-urg { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-3); border: 1px solid color-mix(in oklab, var(--amber) 45%, var(--line)); background: var(--amber-tint); border-radius: var(--r-md); }
+.cm2-urg-t { display: flex; align-items: center; gap: 8px; color: var(--amber-ink); }
+.cm2-urg p { margin: 0; font-size: var(--fs-sm); color: var(--ink-2); }

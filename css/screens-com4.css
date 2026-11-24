@@ -1,0 +1,23 @@
+/* Central de comunicação: agente de atendimento (prefixo cm4-). Violeta só para IA. */
+.cm4-card .card-body { display: flex; flex-direction: column; gap: var(--s-3); }
+.cm4-sug { display: flex; flex-direction: column; gap: 2px; }
+.cm4-sug strong { font-size: var(--fs-md); }
+.cm4-resumo { margin: 0; font-size: var(--fs-sm); color: var(--ink-2); overflow-wrap: anywhere; }
+.cm4-why { margin: 0; padding-left: 18px; list-style: disc; font-size: var(--fs-sm); color: var(--ink-2); }
+.cm4-why li { margin: 2px 0; }
+.cm4-ctx ul { list-style: disc; }
+.cm4-draft { border: 1px solid var(--ai-line, var(--line)); background: var(--ai-bg, var(--surface-2)); border-radius: var(--r-md); padding: var(--s-3); display: flex; flex-direction: column; gap: var(--s-2); }
+.cm4-draft p { margin: 0; font-size: var(--fs-sm); white-space: pre-wrap; overflow-wrap: anywhere; }
+.cm4-draft-h { display: flex; align-items: center; gap: var(--s-2); }
+.cm4-ctx summary { cursor: pointer; font-size: var(--fs-xs); color: var(--ink-3); }
+.cm4-ctx ul { margin: 4px 0; padding-left: 16px; font-size: var(--fs-xs); color: var(--ink-2); }
+.cm4-fonte { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); font-size: var(--fs-xs); color: var(--ink-3); }
+.cm4-fonte span { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.cm4-fonte a { color: var(--accent); text-decoration: underline; }
+.cm4-met { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-3); }
+.cm4-fonte .cm4-fonte-n { display: flex; align-items: flex-start; flex-wrap: nowrap; }
+.cm4-fonte .cm4-fonte-n svg { flex: none; margin-top: 2px; }
+@media (max-width: 1100px) { .cm4-met { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .cm4-met { grid-template-columns: minmax(0, 1fr); } }
+.asst-src { display: flex; align-items: flex-start; gap: 4px; margin-top: 6px; font-size: var(--fs-xs); color: var(--ink-3); }
+.asst-src svg { flex: none; margin-top: 2px; }

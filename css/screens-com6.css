@@ -1,0 +1,13 @@
+/* Central de comunicação: saúde e controles do Superadmin (prefixo cm6-) */
+.cm6-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); }
+.cm6-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-4); align-items: start; }
+.cm6-blocos { display: flex; flex-direction: column; gap: var(--s-3); }
+.cm6-bloco { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-3); padding-bottom: var(--s-3); border-bottom: 1px solid var(--line); }
+.cm6-bloco:last-child { border-bottom: 0; padding-bottom: 0; }
+.cm6-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); margin-bottom: var(--s-3); }
+.cm6-cats { display: flex; flex-direction: column; gap: var(--s-3); }
+.cm6-cat { display: flex; flex-direction: column; gap: 2px; padding: var(--s-3); border: 1px solid var(--line); border-radius: var(--r-md); }
+.cm6-cat-h { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); flex-wrap: wrap; }
+.cm6-cols .cm4-met { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .cm6-cols { grid-template-columns: minmax(0, 1fr); } .cm6-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .cm6-kpis, .cm6-form { grid-template-columns: minmax(0, 1fr); } }

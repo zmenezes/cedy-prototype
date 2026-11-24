@@ -169,7 +169,7 @@
       return h('div.stack',
         ui.pageHeader({ title: op.id, back: '/cedente/operacoes', eyebrow: `${op.canal === 'vitrine' ? 'Vitrine' : 'Balcão'} · ${prodName(op.produto)}`,
           subtitle: `${fmt.plural(op.tituloIds.length, 'título', 'títulos')} · face ${fmt.brl(op.face)}${op.prazoMedio ? ` · prazo médio ${op.prazoMedio} dias` : ''}`,
-          actions: [ui.status('operacao', op.status)] }),
+          actions: [ui.status('operacao', op.status), C.comUI.btnConversar({ kind: 'operacao', id: op.id }, { rotulo: 'Operação ' + op.id })] }),
         aviso,
         ui.stepper(STEPS, stepIndex(op)),
         h('div.detail-grid', mainNode, ladoOp(op)));
@@ -224,7 +224,7 @@
       if (r.ok) ui.toast('Operação cancelada', { type: 'success' });
       else ui.toast('Não foi possível cancelar', { type: 'error', text: r.erro });
     } })) : null;
-    return h('div.stack', list, tetoCard, cancel);
+    return h('div.stack', list, C.comUI.esclarecimentosCard(op.id), tetoCard, cancel);
   }
 
   function aceitarModal(op, lance) {

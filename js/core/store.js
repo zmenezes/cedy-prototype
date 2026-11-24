@@ -5,16 +5,18 @@
    Regras de uso (contrato para as telas):
    - Estado só muda por Cedy.db.* ou Cedy.engine.*; telas nunca mutam objetos diretamente.
    - Coleções: orgs, users, titulos, operacoes, lances, contratos, extrato, repasses,
-     faturas, premiacoes, kyc, convites, agentes, propostas, produtos, notifs, lotes, contestacoes, casosMesa
+   faturas, premiacoes, kyc, convites, agentes, propostas, produtos, notifs, lotes, contestacoes, casosMesa,
+     conversas, mensagens, notasCedy, alertasContato, denuncias, bloqueiosCom, acoesChamado, comunicados, ciencias, respostasIA, acessosCom
    - Cada escrita emite o tópico da coleção. Cedy.ui.live(['operacoes','lances'], fn) re-renderiza.
    ========================================================================= */
 (function () {
   const C = window.Cedy;
   const KEY = 'cedy-proto-0.1';
-  const VERSION = 8;
+  const VERSION = 9;
 
   const COLLECTIONS = ['orgs', 'users', 'titulos', 'operacoes', 'lances', 'contratos', 'extrato', 'repasses', 'faturas', 'premiacoes',
-    'kyc', 'convites', 'agentes', 'propostas', 'produtos', 'notifs', 'lotes', 'contestacoes', 'casosMesa', 'subparceiros', 'aprovacoes', 'incidentes', 'servicos', 'backups', 'titulares', 'eventosSeg', 'usoIA', 'modelosIA', 'integracoes'];
+    'kyc', 'convites', 'agentes', 'propostas', 'produtos', 'notifs', 'lotes', 'contestacoes', 'casosMesa', 'subparceiros', 'aprovacoes', 'incidentes', 'servicos', 'backups', 'titulares', 'eventosSeg', 'usoIA', 'modelosIA', 'integracoes',
+    'conversas', 'mensagens', 'notasCedy', 'alertasContato', 'denuncias', 'bloqueiosCom', 'acoesChamado', 'comunicados', 'ciencias', 'respostasIA', 'acessosCom'];
 
   let S = null;           // estado
   const subs = new Map(); // tópico -> Set(fn)
@@ -120,10 +122,20 @@
   };
 
   /* ---------------------------- notificações ---------------------------- */
+  // Três classes (CC-19): obrigatória (não desliga), operacional (ajustável por canal e horário), informativa (opt-in).
+  // Obrigatória gera e-mail simulado (prévia sem dado sensível). exigeAcao: {ack:true} (ciência) ou {coll,id,campo,enquanto:[...]}:
+  // enquanto o estado do registro estiver em "enquanto", a notificação continua pendente e "marcar todas como lidas" não a limpa (CC-33).
+  function inferClasse(n) {
+    const t = (n.titulo || '').toLowerCase();
+    if (/acesso de suporte|devida|em atraso|sem liquida|segurança|senha|2fa|redefini|termos|incidente|falta a sua assinatura/.test(t)) return 'obrigatoria';
+    if (/relatório|resumo|novidade|dica/.test(t)) return 'informativa';
+    return 'operacional';
+  }
   const notify = {
     /** to: {userId} | {orgId} | {role:'ops'} */
-    send({ to, tipo = 'info', titulo, corpo = '', link = null, ts }) {
-      const n = { id: C.uid('nt'), to, tipo, titulo, corpo, link, ts: ts || C.clock.now(), lida: false };
+    send({ to, tipo = 'info', titulo, corpo = '', link = null, ts, classe, canal, exigeAcao = null }) {
+      const cl = classe || inferClasse({ titulo, tipo });
+      const n = { id: C.uid('nt'), to, tipo, titulo, corpo, link, ts: ts || C.clock.now(), lida: false, classe: cl, canal: canal || (cl === 'obrigatoria' ? ['app', 'email_simulado'] : ['app']), exigeAcao: exigeAcao && cl === 'obrigatoria' ? exigeAcao : null, resolvida: false };
       S.notifs[n.id] = n; emit('notifs');
       const me = session.get();
       if (me && C.ui && C.ui.toast && !n.silent && matches(n, me) && n.ts >= C.clock.now() - 5000) C.ui.toast(titulo, { type: tipo === 'erro' ? 'error' : tipo === 'sucesso' ? 'success' : tipo === 'alerta' ? 'warn' : 'info', text: corpo, link });
@@ -132,7 +144,15 @@
     mine() { const me = session.get(); if (!me) return []; return Object.values(S.notifs).filter((n) => matches(n, me)).sort((a, b) => b.ts - a.ts); },
     unread() { return notify.mine().filter((n) => !n.lida).length; },
     read(id) { const n = S.notifs[id]; if (n && !n.lida) { n.lida = true; emit('notifs'); } },
-    readAll() { notify.mine().forEach((n) => { n.lida = true; }); emit('notifs'); },
+    /** ainda exige ação ou ciência? */
+    pending(n) {
+      if (!n || !n.exigeAcao || n.resolvida) return false;
+      const x = n.exigeAcao; if (x.ack) return true;
+      const o = (S[x.coll] || {})[x.id]; return !!o && (x.enquanto || []).includes(o[x.campo]);
+    },
+    resolve(id) { const n = S.notifs[id]; if (n && !n.resolvida) { n.resolvida = true; n.lida = true; emit('notifs'); } },
+    /** não limpa obrigatórias que ainda exigem ação ou ciência (CC-33) */
+    readAll() { notify.mine().forEach((n) => { if (!notify.pending(n)) n.lida = true; }); emit('notifs'); },
   };
   function matches(n, me) {
     const t = n.to || {};

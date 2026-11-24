@@ -1,0 +1,20 @@
+/* Comunicados da Central (S5). Prefixo cm5-. */
+.cm5 { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cm5-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.cm5-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cm5-grow { flex: 1 1 auto; }
+.cm5-card { overflow-x: auto; max-width: 100%; }
+.cm5-checks { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.cm5-corpo { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; max-width: 100%; }
+.cm5-vig { display: flex; align-items: center; gap: 6px; color: var(--amber-700, #92600a); font-size: 13px; }
+.cm5-h { margin: 12px 0 6px; font-size: 13px; }
+.cm5-foot { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
+.cm5-faixa-act { margin-left: auto; display: inline-flex; }
+
+@media (max-width: 900px) {
+  .cm5-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .cm5-kpis { grid-template-columns: minmax(0, 1fr); }
+  .cm5-bar .select, .cm5-bar .input { flex: 1 1 100%; min-width: 0; }
+}
